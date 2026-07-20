@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* EV.JO — green-on-light identity */
+    --background: 150 14% 97%; /* #F4F7F6 */
+    --foreground: 156 30% 10%; /* #12211A */
+    --card: 0 0% 100%;
+    --card-foreground: 156 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 156 30% 10%;
+    --primary: 150 64% 29%; /* #1B7A4B */
+    --primary-foreground: 0 0% 100%;
+    --primary-dark: 152 67% 14%; /* #0C3B24 */
+    --secondary: 150 20% 93%;
+    --secondary-foreground: 152 67% 14%;
+    --muted: 150 12% 93%;
+    --muted-foreground: 154 10% 42%;
+    --accent: 150 45% 92%;
+    --accent-foreground: 152 67% 14%;
+    --destructive: 350 80% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 12% 88%;
+    --input: 150 12% 85%;
+    --ring: 150 64% 29%;
+    --radius: 1rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Numerals stay latin and tabular in both locales — prices must align. */
+  .num {
+    font-variant-numeric: tabular-nums lining-nums;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 1px 2px rgb(18 33 26 / 0.05), 0 4px 16px rgb(18 33 26 / 0.06);
+  }
+  .fab-shadow {
+    box-shadow: 0 6px 20px rgb(27 122 75 / 0.45);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
+
+/* Leaflet inside RTL layouts: keep map internals LTR */
+.leaflet-container {
+  direction: ltr;
+  font: inherit;
+  border-radius: var(--radius);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

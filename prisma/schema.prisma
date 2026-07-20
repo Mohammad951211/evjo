@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ConnectorType {
+  CCS2
+  CHADEMO
+  GBT_DC
+  TYPE2
+}
+
+enum MeterType {
+  EV_METER
+  SERVICES_METER
+}
+
+enum SessionLocation {
+  STATION
+  HOME
+}
+
+enum StationStatus {
+  OPERATIONAL
+  PLANNED
+  UNKNOWN
+  OFFLINE
+}
+
+model User {
+  id            String            @id @default(cuid())
+  name          String
+  email         String?           @unique
+  phone         String?           @unique
+  phoneVerified Boolean           @default(false)
+  isAdmin       Boolean           @default(false)
+  passwordHash  String
+  city          String?
+  locale        String            @default("ar")
+  onboarded     Boolean           @default(false)
+  meterType     MeterType?
+  homeChargerKw Float?
+  servicesTier  Int?              @default(2)
+  createdAt     DateTime          @default(now())
+  vehicles      UserVehicle[]
+  sessions      ChargingSession[]
+}
+
+/// Seeded vehicle catalog — one row per battery variant.
+model Vehicle {
+  id           String        @id @default(cuid())
+  make         String
+  model        String
+  variant      String
+  yearFrom     Int
+  yearTo       Int?
+  batteryKwh   Float
+  usableKwh    Float
+  rangeKm      Int
+  consumption  Float // kWh / 100 km (WLTP)
+  acKw         Float
+  dcKw         Float
+  connector    ConnectorType
+  weightKg     Int?
+  drivetrain   String?
+  image        String?
+  userVehicles UserVehicle[]
+
+  @@unique([make, model, variant, yearFrom])
+  @@index([make])
+}
+
+/// A car parked in a user's garage. Either references the catalog
+/// or carries fully custom specs ("Other / Not Listed").
+model UserVehicle {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleId     String?
+  vehicle       Vehicle?          @relation(fields: [vehicleId], references: [id])
+  nickname      String?
+  year          Int?
+  isDefault     Boolean           @default(false)
+  customName    String?
+  customBattery Float?
+  customUsable  Float?
+  customConsumption Float?
+  customDcKw    Float?
+  customConnector ConnectorType?
+  createdAt     DateTime          @default(now())
+  sessions      ChargingSession[]
+
+  @@index([userId])
+}
+
+/// Cached OpenChargeMap fast-charging stations (>= 50 kW DC only).
+model Station {
+  id           String            @id @default(cuid())
+  ocmId        Int?              @unique
+  osmId        String?           @unique
+  source       String            @default("OCM")
+  nameEn       String
+  nameAr       String?
+  operator     String?
+  latitude     Float
+  longitude    Float
+  address      String?
+  town         String?
+  status       StationStatus     @default(UNKNOWN)
+  connectors   Json // [{ type: "CCS2", powerKw: 120, quantity: 2 }]
+  maxPowerKw   Float
+  totalPoints  Int               @default(1)
+  pricing      String?
+  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime          @default(now())
+  sessions     ChargingSession[]
+
+  @@index([latitude, longitude])
+}
+
+/// One-time codes for phone verification. Codes are stored hashed.
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
+model ChargingSession {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userVehicleId String?
+  userVehicle   UserVehicle?    @relation(fields: [userVehicleId], references: [id], onDelete: SetNull)
+  locationType  SessionLocation
+  stationId     String?
+  station       Station?        @relation(fields: [stationId], references: [id], onDelete: SetNull)
+  startedAt     DateTime        @default(now())
+  kwh           Float
+  costJod       Float
+  durationMin   Int?
+  note          String?
+  createdAt     DateTime        @default(now())
+
+  @@index([userId, startedAt])
+}

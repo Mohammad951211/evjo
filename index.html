@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شحنتك — مساعد السيارات الكهربائية في الأردن</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1623; --card:#1a2332; --card2:#212d40; --line:#2e3d55;
+    --text:#eef2f8; --muted:#93a3bc; --accent:#34d399; --accent2:#10b981;
+    --warn:#fbbf24; --danger:#f87171; --blue:#60a5fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; line-height:1.6;
+  }
+  .container{max-width:760px; margin:0 auto; padding:16px;}
+  header{text-align:center; padding:22px 16px 8px; position:relative;}
+  header h1{font-size:1.7rem; font-weight:800;}
+  header h1 .bolt{color:var(--accent);}
+  header p{color:var(--muted); font-size:.95rem;}
+  .lang-btn{
+    position:absolute; top:18px; inset-inline-end:16px;
+    background:var(--card2); color:var(--text); border:1px solid var(--line);
+    border-radius:99px; padding:7px 16px; font-family:inherit; font-weight:800;
+    font-size:.85rem; cursor:pointer; transition:.15s;
+  }
+  .lang-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  /* tabs */
+  .tabs{display:flex; gap:6px; margin:18px 0 14px; background:var(--card); border-radius:var(--radius); padding:6px; position:sticky; top:8px; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.35);}
+  .tab{flex:1; text-align:center; padding:10px 4px; border-radius:12px; cursor:pointer; color:var(--muted); font-weight:700; font-size:.86rem; border:none; background:transparent; font-family:inherit; transition:.15s;}
+  .tab .ico{display:block; font-size:1.15rem; margin-bottom:2px;}
+  .tab.active{background:var(--accent); color:#06281c;}
+  .panel{display:none; animation:fade .25s;}
+  .panel.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+  .card h2{font-size:1.1rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .hint{color:var(--muted); font-size:.85rem;}
+
+  label{display:block; font-weight:700; font-size:.9rem; margin:10px 0 4px;}
+  select,input[type=number],input[type=text]{
+    width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--line);
+    background:var(--card2); color:var(--text); font-family:inherit; font-size:1rem;
+  }
+  select:focus,input:focus{outline:2px solid var(--accent2); border-color:transparent;}
+  .row{display:flex; gap:10px;}
+  .row>*{flex:1;}
+  input[type=range]{width:100%; accent-color:var(--accent); margin-top:6px;}
+  .range-val{font-weight:800; color:var(--accent); font-size:1.05rem;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:13px; margin-top:14px; border:none; border-radius:12px;
+    background:var(--accent); color:#06281c; font-family:inherit; font-weight:800; font-size:1rem; cursor:pointer; transition:.15s;
+  }
+  .btn:hover{background:var(--accent2);}
+  .btn.secondary{background:var(--card2); color:var(--text); border:1px solid var(--line);}
+  .btn.small{width:auto; padding:8px 14px; font-size:.85rem; margin-top:8px;}
+
+  .pill{display:inline-block; padding:2px 10px; border-radius:99px; font-size:.75rem; font-weight:700;}
+  .pill.fast{background:rgba(96,165,250,.15); color:var(--blue);}
+  .pill.slow{background:rgba(251,191,36,.15); color:var(--warn);}
+  .pill.ok{background:rgba(52,211,153,.15); color:var(--accent);}
+
+  .station{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:8px;
+  }
+  .station .name{font-weight:700; font-size:.95rem;}
+  .station .meta{color:var(--muted); font-size:.8rem;}
+  .station a{
+    flex-shrink:0; text-decoration:none; background:var(--accent); color:#06281c;
+    padding:8px 12px; border-radius:10px; font-weight:800; font-size:.82rem; white-space:nowrap;
+  }
+  #map{height:300px; border-radius:12px; margin-bottom:12px; border:1px solid var(--line); z-index:1;}
+
+  .verdict{border-radius:12px; padding:16px; margin-top:14px; font-weight:700;}
+  .verdict.green{background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.4);}
+  .verdict.yellow{background:rgba(251,191,36,.12); border:1px solid rgba(251,191,36,.4);}
+  .verdict.red{background:rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.4);}
+  .verdict .big{font-size:1.15rem; display:flex; gap:8px; align-items:center; margin-bottom:6px;}
+  .verdict ul{margin-top:8px; padding-inline-start:20px; font-weight:400; font-size:.9rem;}
+  .verdict ul li{margin-bottom:4px;}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:14px;}
+  .stat{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center;}
+  .stat .v{font-size:1.3rem; font-weight:800; color:var(--accent);}
+  .stat .l{color:var(--muted); font-size:.8rem;}
+  .stat.cost .v{color:var(--warn);}
+
+  table.tariff{width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px;}
+  table.tariff th,table.tariff td{padding:8px; border-bottom:1px solid var(--line); text-align:start;}
+  table.tariff th{color:var(--muted); font-weight:700;}
+  table.tariff td input{width:80px; padding:6px; text-align:center;}
+  .active-period{color:var(--accent); font-weight:800;}
+
+  .savebar{display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap;}
+  .savebar .btn{width:auto; flex:1; min-width:140px; margin-top:0;}
+  .saved-note{color:var(--accent); font-size:.85rem; font-weight:700; display:none;}
+
+  footer{text-align:center; color:var(--muted); font-size:.78rem; padding:20px 10px 30px;}
+  footer a{color:var(--blue);}
+  details{margin-top:10px;}
+  summary{cursor:pointer; color:var(--blue); font-weight:700; font-size:.9rem;}
+  @media(max-width:480px){ .row{flex-direction:column; gap:0;} .tab{font-size:.78rem;} }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="lang-btn" id="langBtn">English</button>
+  <h1><span class="bolt">⚡</span> <span data-i18n="app_name">شحنتك</span></h1>
+  <p data-i18n="app_sub">مساعدك للسيارة الكهربائية في الأردن — محطات، رحلات، وتكلفة الشحن</p>
+</header>
+
+<div class="container">
+
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tab active" data-panel="car"><span class="ico">🚗</span><span data-i18n="tab_car">سيارتي</span></button>
+    <button class="tab" data-panel="stations"><span class="ico">📍</span><span data-i18n="tab_stations">المحطات</span></button>
+    <button class="tab" data-panel="trip"><span class="ico">🗺️</span><span data-i18n="tab_trip">الرحلة</span></button>
+    <button class="tab" data-panel="calc"><span class="ico">💰</span><span data-i18n="tab_calc">الحاسبة</span></button>
+  </nav>
+
+  <!-- ============ PANEL: CAR ============ -->
+  <section class="panel active" id="panel-car">
+    <div class="card">
+      <h2>🚗 <span data-i18n="car_h">بيانات سيارتك</span></h2>
+      <p class="hint" data-i18n="car_hint">عبّي بياناتك مرة وحدة وكل أقسام التطبيق رح تستخدمها. ما في داعي لتسجيل دخول — تقدر تحفظها على جهازك.</p>
+
+      <label data-i18n="lbl_model">موديل السيارة</label>
+      <select id="carModel"></select>
+
+      <div class="row">
+        <div>
+          <label data-i18n="lbl_battery">حجم البطارية (ك.و.س)</label>
+          <input type="number" id="battery" min="10" max="150" step="0.1" value="40">
+        </div>
+        <div>
+          <label data-i18n="lbl_cons">الاستهلاك (واط/كم)</label>
+          <input type="number" id="consumption" min="80" max="300" step="1" value="160">
+        </div>
+      </div>
+
+      <label><span data-i18n="lbl_soc">نسبة الشحن الحالية:</span> <span class="range-val" id="socVal">60%</span></label>
+      <input type="range" id="soc" min="0" max="100" value="60">
+
+      <label data-i18n="lbl_charger">نوع الشاحن المعتاد</label>
+      <select id="chargerType">
+        <option value="home" data-i18n="opt_home">🏠 شاحن منزلي (AC ~7 ك.و)</option>
+        <option value="slow" data-i18n="opt_slow">🔌 محطة عامة بطيئة (AC ~22 ك.و)</option>
+        <option value="fast" data-i18n="opt_fast">⚡ محطة عامة سريعة (DC ~60 ك.و)</option>
+      </select>
+
+      <div class="stats">
+        <div class="stat"><div class="v" id="rangeNow">—</div><div class="l" data-i18n="stat_range_now">المدى المتاح الآن (كم)</div></div>
+        <div class="stat"><div class="v" id="rangeFull">—</div><div class="l" data-i18n="stat_range_full">المدى ببطارية ممتلئة (كم)</div></div>
+        <div class="stat"><div class="v" id="kwhNow">—</div><div class="l" data-i18n="stat_kwh">الطاقة المتبقية (ك.و.س)</div></div>
+      </div>
+
+      <div class="savebar">
+        <button class="btn" id="saveBtn" data-i18n="btn_save">💾 حفظ بياناتي على هذا الجهاز</button>
+        <button class="btn secondary" id="clearBtn" data-i18n="btn_clear">🗑️ مسح البيانات</button>
+      </div>
+      <p class="saved-note" id="savedNote"></p>
+    </div>
+  </section>
+
+  <!-- ============ PANEL: STATIONS ============ -->
+  <section class="panel" id="panel-stations">
+    <div class="card">
+      <h2>📍 <span data-i18n="st_h">محطات الشحن القريبة منك</span></h2>
+      <p class="hint" data-i18n="st_hint">اضغط الزر ليحدد موقعك ويرتب المحطات حسب الأقرب. القائمة استرشادية — يُنصح بالتأكد من عمل المحطة قبل التوجه.</p>
+      <button class="btn" id="locateBtn" data-i18n="btn_locate">🧭 حدد موقعي واعرض الأقرب</button>
+      <div id="map" style="margin-top:14px;"></div>
+      <div id="stationList"></div>
+      <a id="gmapsSearch" href="https://www.google.com/maps/search/EV+charging+station" target="_blank" rel="noopener" style="text-decoration:none;">
+        <button class="btn secondary" data-i18n="btn_gsearch">🔎 بحث مباشر في خرائط Google عن محطات حولي</button>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ PANEL: TRIP ============ -->
+  <section class="panel" id="panel-trip">
+    <div class="card">
+      <h2>🗺️ <span data-i18n="trip_h">مخطط الرحلة — هل أوصل؟</span></h2>
+      <div class="row">
+        <div>
+          <label data-i18n="lbl_from">من (نقطة الانطلاق)</label>
+          <select id="tripFrom"></select>
+        </div>
+        <div>
+          <label data-i18n="lbl_to">إلى (الوجهة)</label>
+          <select id="tripTo"></select>
+        </div>
+      </div>
+      <button class="btn small secondary" id="useMyLocation" data-i18n="btn_myloc">🧭 استخدم موقعي الحالي كنقطة انطلاق</button>
+
+      <label><span data-i18n="lbl_trip_soc">نسبة الشحن عند الانطلاق:</span> <span class="range-val" id="tripSocVal">60%</span></label>
+      <input type="range" id="tripSoc" min="0" max="100" value="60">
+
+      <label data-i18n="lbl_round">هل سترجع بنفس اليوم بدون شحن؟ (ذهاب وعودة)</label>
+      <select id="roundTrip">
+        <option value="1" data-i18n="opt_oneway">لا — ذهاب فقط</option>
+        <option value="2" data-i18n="opt_round">نعم — ذهاب وعودة</option>
+      </select>
+
+      <button class="btn" id="planBtn" data-i18n="btn_plan">🚀 احسب الرحلة</button>
+      <div id="tripResult"></div>
+    </div>
+  </section>
+
+  <!-- ============ PANEL: CALC ============ -->
+  <section class="panel" id="panel-calc">
+    <div class="card">
+      <h2>💰 <span data-i18n="calc_h">حاسبة تكلفة الشحن</span></h2>
+      <p class="hint" data-i18n="calc_hint">حسب التعرفة الزمنية المعمول بها في الأردن (قابلة للتعديل تحت).</p>
+
+      <div class="row">
+        <div>
+          <label><span data-i18n="lbl_before">نسبة الشحن قبل:</span> <span class="range-val" id="beforeVal">20%</span></label>
+          <input type="range" id="socBefore" min="0" max="100" value="20">
+        </div>
+        <div>
+          <label><span data-i18n="lbl_after">نسبة الشحن بعد:</span> <span class="range-val" id="afterVal">80%</span></label>
+          <input type="range" id="socAfter" min="0" max="100" value="80">
+        </div>
+      </div>
+
+      <label data-i18n="lbl_where">مكان الشحن</label>
+      <select id="calcCharger">
+        <option value="home" data-i18n="optc_home">🏠 منزلي (بدون عمولة)</option>
+        <option value="slow" data-i18n="optc_slow">🔌 محطة عامة بطيئة (+ عمولة حتى 35 فلس/ك.و.س)</option>
+        <option value="fast" data-i18n="optc_fast">⚡ محطة عامة سريعة (+ عمولة حتى 80 فلس/ك.و.س)</option>
+      </select>
+
+      <label data-i18n="lbl_when">وقت الشحن</label>
+      <select id="calcPeriod">
+        <option value="auto" data-i18n="optp_auto">🕐 الآن (تحديد تلقائي حسب الساعة)</option>
+        <option value="off" data-i18n="optp_off">🌅 خارج الذروة (5 صباحاً – 2 ظهراً)</option>
+        <option value="partial" data-i18n="optp_partial">🌤️ ذروة جزئية (2–5 عصراً و 11 مساءً – 5 صباحاً)</option>
+        <option value="peak" data-i18n="optp_peak">🌆 الذروة (5 – 11 مساءً)</option>
+      </select>
+
+      <button class="btn" id="calcBtn" data-i18n="btn_calc">🧮 احسب التكلفة</button>
+      <div class="stats" id="calcStats" style="display:none;">
+        <div class="stat"><div class="v" id="calcKwh">—</div><div class="l" data-i18n="stat_added">طاقة مضافة (ك.و.س)</div></div>
+        <div class="stat cost"><div class="v" id="calcCost">—</div><div class="l" data-i18n="stat_cost">التكلفة (دينار)</div></div>
+        <div class="stat"><div class="v" id="calcTime">—</div><div class="l" data-i18n="stat_time">مدة الشحن التقريبية</div></div>
+        <div class="stat"><div class="v" id="calcPerKm">—</div><div class="l" data-i18n="stat_perkm">كلفة الكيلومتر (فلس)</div></div>
+      </div>
+      <p class="hint" id="calcNote" style="margin-top:10px;"></p>
+
+      <details>
+        <summary data-i18n="tariff_edit">⚙️ تعديل التعرفة (فلس/ك.و.س)</summary>
+        <table class="tariff">
+          <tr><th data-i18n="col_period">الفترة</th><th data-i18n="col_time">الوقت</th><th data-i18n="col_rate">التعرفة</th></tr>
+          <tr><td id="lbl-off" data-i18n="per_off">خارج الذروة</td><td data-i18n="time_off">5 ص – 2 ظ</td><td><input type="number" id="t-off" value="108"></td></tr>
+          <tr><td id="lbl-partial" data-i18n="per_partial">ذروة جزئية</td><td data-i18n="time_partial">2–5 ع، 11 م – 5 ص</td><td><input type="number" id="t-partial" value="113"></td></tr>
+          <tr><td id="lbl-peak" data-i18n="per_peak">الذروة</td><td data-i18n="time_peak">5 – 11 م</td><td><input type="number" id="t-peak" value="133"></td></tr>
+          <tr><td data-i18n="com_slow">عمولة محطة بطيئة</td><td>—</td><td><input type="number" id="t-comSlow" value="35"></td></tr>
+          <tr><td data-i18n="com_fast">عمولة محطة سريعة</td><td>—</td><td><input type="number" id="t-comFast" value="80"></td></tr>
+        </table>
+      </details>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span data-i18n="footer1">التعرفة الافتراضية حسب التعرفة الزمنية لشحن المركبات الكهربائية في الأردن، وقائمة المحطات استرشادية.</span><br>
+  <span data-i18n="footer2">الأرقام تقديرية وتعتمد على ظروف القيادة والطقس وحالة البطارية. ⚡ بالتوفيق على الطريق!</span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+
+/* ============ TRANSLATIONS ============ */
+const I18N = {
+ar:{
+  app_name:"شحنتك", app_title:"شحنتك — مساعد السيارات الكهربائية في الأردن",
+  app_sub:"مساعدك للسيارة الكهربائية في الأردن — محطات، رحلات، وتكلفة الشحن",
+  tab_car:"سيارتي", tab_stations:"المحطات", tab_trip:"الرحلة", tab_calc:"الحاسبة",
+  car_h:"بيانات سيارتك",
+  car_hint:"عبّي بياناتك مرة وحدة وكل أقسام التطبيق رح تستخدمها. ما في داعي لتسجيل دخول — تقدر تحفظها على جهازك.",
+  lbl_model:"موديل السيارة", lbl_battery:"حجم البطارية (ك.و.س)", lbl_cons:"الاستهلاك (واط/كم)",
+  lbl_soc:"نسبة الشحن الحالية:", lbl_charger:"نوع الشاحن المعتاد",
+  opt_home:"🏠 شاحن منزلي (AC ~7 ك.و)", opt_slow:"🔌 محطة عامة بطيئة (AC ~22 ك.و)", opt_fast:"⚡ محطة عامة سريعة (DC ~60 ك.و)",
+  stat_range_now:"المدى المتاح الآن (كم)", stat_range_full:"المدى ببطارية ممتلئة (كم)", stat_kwh:"الطاقة المتبقية (ك.و.س)",
+  btn_save:"💾 حفظ بياناتي على هذا الجهاز", btn_clear:"🗑️ مسح البيانات",
+  saved_ok:"✓ تم الحفظ! بياناتك رح تكون جاهزة بالزيارة الجاية.", saved_cleared:"تم مسح البيانات المحفوظة.",
+  custom_car:"أخرى — أدخل البيانات يدوياً",
+  st_h:"محطات الشحن القريبة منك",
+  st_hint:"اضغط الزر ليحدد موقعك ويرتب المحطات حسب الأقرب. القائمة استرشادية — يُنصح بالتأكد من عمل المحطة قبل التوجه.",
+  btn_locate:"🧭 حدد موقعي واعرض الأقرب", btn_locating:"⏳ جارٍ تحديد موقعك...",
+  btn_gsearch:"🔎 بحث مباشر في خرائط Google عن محطات حولي",
+  pill_fast:"⚡ سريع DC", pill_slow:"🔌 بطيء AC", pill_inrange:"✓ ضمن مداك",
+  route:"🧭 المسار", km:"كم", your_loc:"📍 موقعك", open_route:"المسار في Google Maps",
+  loc_fail:"تعذر تحديد الموقع — تأكد من السماح للمتصفح بالوصول للموقع.",
+  trip_h:"مخطط الرحلة — هل أوصل؟",
+  lbl_from:"من (نقطة الانطلاق)", lbl_to:"إلى (الوجهة)",
+  btn_myloc:"🧭 استخدم موقعي الحالي كنقطة انطلاق", btn_myloc_busy:"⏳ جارٍ التحديد...", btn_myloc_ok:"✓ تم استخدام موقعك الحالي",
+  lbl_trip_soc:"نسبة الشحن عند الانطلاق:",
+  lbl_round:"هل سترجع بنفس اليوم بدون شحن؟ (ذهاب وعودة)",
+  opt_oneway:"لا — ذهاب فقط", opt_round:"نعم — ذهاب وعودة",
+  btn_plan:"🚀 احسب الرحلة", my_location:"موقعي الحالي",
+  verdict_green:"✅ تقدر توصل بأريحية!", verdict_yellow:"⚠️ رح توصل، بس الهامش ضيق", verdict_red:"❌ ما رح توصل بالشحنة الحالية",
+  tip_remaining:p=>`رح يتبقى معك تقريباً <b>${p}%</b> شحن عند الوصول.`,
+  tip_slow:"خفف السرعة (90–100 كم/س على الطريق الخارجي) لتقليل الاستهلاك.",
+  tip_ac:"قلل استخدام المكيف/التدفئة قدر الإمكان.",
+  tip_charge_to:p=>`الأفضل تشحن لـ <b>${p}%</b> قبل الانطلاق إذا أمكن.`,
+  tip_need:(p,full)=>`تحتاج تشحن لـ <b>${p}%</b> على الأقل قبل الانطلاق${full?" — وحتى البطارية الكاملة قد لا تكفي، لازم تتوقف للشحن بالطريق":""}.`,
+  tip_midstop:(n,fast)=>`خطط لتوقف شحن قرب منتصف الطريق: <b>${n}</b> ${fast?"(شاحن سريع ⚡)":"(شاحن بطيء 🔌)"}.`,
+  tip_calm:"القيادة الهادئة بسرعة ثابتة توفر حتى 15–20% من الاستهلاك.",
+  tip_heat:"تجنب الانطلاق وقت الحر الشديد — المكيف يستهلك جزءاً ملموساً من البطارية.",
+  tip_return:"احسب حساب العودة — إذا ما في شاحن بالوجهة، لا تنزل تحت نصف المسافة وأنت رايح.",
+  stat_dist:"المسافة التقديرية (كم)", stat_dist_rt:"المسافة التقديرية (كم) ذهاب وعودة",
+  stat_range:"مداك المتاح (كم)", stat_need_kwh:"الطاقة المطلوبة (ك.و.س)",
+  btn_open_gmaps:"🗺️ افتح المسار في خرائط Google",
+  near_dest:"🔌 أقرب محطات للوجهة:", from_dest:d=>`على بعد ≈ ${d} كم من الوجهة`,
+  calc_h:"حاسبة تكلفة الشحن", calc_hint:"حسب التعرفة الزمنية المعمول بها في الأردن (قابلة للتعديل تحت).",
+  lbl_before:"نسبة الشحن قبل:", lbl_after:"نسبة الشحن بعد:", lbl_where:"مكان الشحن",
+  optc_home:"🏠 منزلي (بدون عمولة)", optc_slow:"🔌 محطة عامة بطيئة (+ عمولة حتى 35 فلس/ك.و.س)", optc_fast:"⚡ محطة عامة سريعة (+ عمولة حتى 80 فلس/ك.و.س)",
+  lbl_when:"وقت الشحن",
+  optp_auto:"🕐 الآن (تحديد تلقائي حسب الساعة)", optp_off:"🌅 خارج الذروة (5 صباحاً – 2 ظهراً)",
+  optp_partial:"🌤️ ذروة جزئية (2–5 عصراً و 11 مساءً – 5 صباحاً)", optp_peak:"🌆 الذروة (5 – 11 مساءً)",
+  btn_calc:"🧮 احسب التكلفة",
+  stat_added:"طاقة مضافة (ك.و.س)", stat_cost:"التكلفة (دينار)", stat_time:"مدة الشحن التقريبية", stat_perkm:"كلفة الكيلومتر (فلس)",
+  alert_order:"نسبة الشحن بعد لازم تكون أكبر من قبل 🙂",
+  period_off:"خارج الذروة (5 ص – 2 ظ)", period_partial:"الذروة الجزئية", period_peak:"الذروة (5 – 11 م)",
+  note_main:(per,rate,loss,grid,km)=>`الحساب على تعرفة <b>${per}</b> (${rate} فلس/ك.و.س شامل العمولة)، مع احتساب فاقد شحن ≈ ${loss}%. الطاقة المسحوبة من الشبكة ≈ ${grid} ك.و.س، وتضيف لك ≈ ${km} كم.`,
+  note_save:jd=>` 💡 لو شحنت خارج الذروة (5 ص – 2 ظ) بتوفر ≈ <b>${jd} دينار</b>.`,
+  unit_h:"س", unit_min:"د", minutes:"دقيقة",
+  tariff_edit:"⚙️ تعديل التعرفة (فلس/ك.و.س)",
+  col_period:"الفترة", col_time:"الوقت", col_rate:"التعرفة",
+  per_off:"خارج الذروة", per_partial:"ذروة جزئية", per_peak:"الذروة",
+  time_off:"5 ص – 2 ظ", time_partial:"2–5 ع، 11 م – 5 ص", time_peak:"5 – 11 م",
+  com_slow:"عمولة محطة بطيئة", com_fast:"عمولة محطة سريعة",
+  footer1:"التعرفة الافتراضية حسب التعرفة الزمنية لشحن المركبات الكهربائية في الأردن، وقائمة المحطات استرشادية.",
+  footer2:"الأرقام تقديرية وتعتمد على ظروف القيادة والطقس وحالة البطارية. ⚡ بالتوفيق على الطريق!",
+  lang_btn:"English",
+},
+en:{
+  app_name:"Shahnetak", app_title:"Shahnetak — EV Assistant for Jordan",
+  app_sub:"Your EV companion in Jordan — stations, trips, and charging costs",
+  tab_car:"My Car", tab_stations:"Stations", tab_trip:"Trip", tab_calc:"Calculator",
+  car_h:"Your Car Details",
+  car_hint:"Fill in your details once and every section of the app will use them. No login needed — you can save them on your device.",
+  lbl_model:"Car model", lbl_battery:"Battery size (kWh)", lbl_cons:"Consumption (Wh/km)",
+  lbl_soc:"Current charge level:", lbl_charger:"Usual charger type",
+  opt_home:"🏠 Home charger (AC ~7 kW)", opt_slow:"🔌 Public slow station (AC ~22 kW)", opt_fast:"⚡ Public fast station (DC ~60 kW)",
+  stat_range_now:"Range available now (km)", stat_range_full:"Range on full battery (km)", stat_kwh:"Energy remaining (kWh)",
+  btn_save:"💾 Save my data on this device", btn_clear:"🗑️ Clear data",
+  saved_ok:"✓ Saved! Your data will be ready next visit.", saved_cleared:"Saved data has been cleared.",
+  custom_car:"Other — enter details manually",
+  st_h:"Charging Stations Near You",
+  st_hint:"Tap the button to locate you and sort stations by distance. The list is indicative — verify the station is operational before heading out.",
+  btn_locate:"🧭 Locate me & show nearest", btn_locating:"⏳ Locating you...",
+  btn_gsearch:"🔎 Search Google Maps for stations around me",
+  pill_fast:"⚡ Fast DC", pill_slow:"🔌 Slow AC", pill_inrange:"✓ Within your range",
+  route:"🧭 Route", km:"km", your_loc:"📍 Your location", open_route:"Route in Google Maps",
+  loc_fail:"Could not determine your location — make sure the browser is allowed to access it.",
+  trip_h:"Trip Planner — Will I Make It?",
+  lbl_from:"From (starting point)", lbl_to:"To (destination)",
+  btn_myloc:"🧭 Use my current location as start", btn_myloc_busy:"⏳ Locating...", btn_myloc_ok:"✓ Using your current location",
+  lbl_trip_soc:"Charge level at departure:",
+  lbl_round:"Returning the same day without charging? (round trip)",
+  opt_oneway:"No — one way only", opt_round:"Yes — round trip",
+  btn_plan:"🚀 Plan my trip", my_location:"My current location",
+  verdict_green:"✅ You'll make it comfortably!", verdict_yellow:"⚠️ You'll make it, but the margin is tight", verdict_red:"❌ You won't make it on the current charge",
+  tip_remaining:p=>`You'll arrive with roughly <b>${p}%</b> charge remaining.`,
+  tip_slow:"Slow down (90–100 km/h on highways) to reduce consumption.",
+  tip_ac:"Minimize A/C and heating use where possible.",
+  tip_charge_to:p=>`Best to charge to <b>${p}%</b> before departure if you can.`,
+  tip_need:(p,full)=>`You need to charge to at least <b>${p}%</b> before departure${full?" — and even a full battery may not be enough; plan a charging stop en route":""}.`,
+  tip_midstop:(n,fast)=>`Plan a charging stop near the midpoint: <b>${n}</b> ${fast?"(fast charger ⚡)":"(slow charger 🔌)"}.`,
+  tip_calm:"Calm, steady-speed driving saves up to 15–20% of consumption.",
+  tip_heat:"Avoid departing in extreme heat — A/C consumes a noticeable share of the battery.",
+  tip_return:"Account for the return leg — if there's no charger at the destination, don't go below half your range on the way there.",
+  stat_dist:"Estimated distance (km)", stat_dist_rt:"Estimated distance (km) round trip",
+  stat_range:"Your available range (km)", stat_need_kwh:"Energy required (kWh)",
+  btn_open_gmaps:"🗺️ Open route in Google Maps",
+  near_dest:"🔌 Nearest stations to your destination:", from_dest:d=>`≈ ${d} km from destination`,
+  calc_h:"Charging Cost Calculator", calc_hint:"Based on Jordan's time-of-use EV tariff (editable below).",
+  lbl_before:"Charge before:", lbl_after:"Charge after:", lbl_where:"Charging location",
+  optc_home:"🏠 Home (no commission)", optc_slow:"🔌 Public slow station (+ up to 35 fils/kWh commission)", optc_fast:"⚡ Public fast station (+ up to 80 fils/kWh commission)",
+  lbl_when:"Charging time",
+  optp_auto:"🕐 Now (auto-detect by current hour)", optp_off:"🌅 Off-peak (5 AM – 2 PM)",
+  optp_partial:"🌤️ Partial peak (2–5 PM & 11 PM – 5 AM)", optp_peak:"🌆 Peak (5 – 11 PM)",
+  btn_calc:"🧮 Calculate cost",
+  stat_added:"Energy added (kWh)", stat_cost:"Cost (JOD)", stat_time:"Approx. charging time", stat_perkm:"Cost per km (fils)",
+  alert_order:"Charge-after must be higher than charge-before 🙂",
+  period_off:"off-peak (5 AM – 2 PM)", period_partial:"partial peak", period_peak:"peak (5 – 11 PM)",
+  note_main:(per,rate,loss,grid,km)=>`Calculated at the <b>${per}</b> tariff (${rate} fils/kWh incl. commission), accounting for ≈ ${loss}% charging losses. Energy drawn from the grid ≈ ${grid} kWh, adding ≈ ${km} km of range.`,
+  note_save:jd=>` 💡 Charging off-peak (5 AM – 2 PM) would save you ≈ <b>${jd} JOD</b>.`,
+  unit_h:"h", unit_min:"m", minutes:"minutes",
+  tariff_edit:"⚙️ Edit tariff (fils/kWh)",
+  col_period:"Period", col_time:"Hours", col_rate:"Rate",
+  per_off:"Off-peak", per_partial:"Partial peak", per_peak:"Peak",
+  time_off:"5 AM – 2 PM", time_partial:"2–5 PM, 11 PM – 5 AM", time_peak:"5 – 11 PM",
+  com_slow:"Slow station commission", com_fast:"Fast station commission",
+  footer1:"Default tariff follows Jordan's time-of-use EV charging tariff; the station list is indicative.",
+  footer2:"Figures are estimates and depend on driving conditions, weather, and battery health. ⚡ Safe travels!",
+  lang_btn:"عربي",
+},
+};
+
+let LANG = localStorage.getItem("shahnetak-lang") || "ar";
+const t = key => I18N[LANG][key];
+
+/* ============ DATA ============ */
+const CARS = [
+  {ar:"نيسان ليف 24 ك.و.س", en:"Nissan Leaf 24 kWh", bat:21.6, cons:160},
+  {ar:"نيسان ليف 30 ك.و.س", en:"Nissan Leaf 30 kWh", bat:28, cons:160},
+  {ar:"نيسان ليف 40 ك.و.س", en:"Nissan Leaf 40 kWh", bat:39, cons:165},
+  {ar:"نيسان ليف e+ 62 ك.و.س", en:"Nissan Leaf e+ 62 kWh", bat:59, cons:170},
+  {ar:"تيسلا موديل 3 ستاندرد", en:"Tesla Model 3 Standard", bat:57.5, cons:140},
+  {ar:"تيسلا موديل 3 لونج رينج", en:"Tesla Model 3 Long Range", bat:75, cons:145},
+  {ar:"تيسلا موديل Y", en:"Tesla Model Y", bat:75, cons:165},
+  {ar:"BYD أتو 3", en:"BYD Atto 3", bat:60.5, cons:160},
+  {ar:"BYD سيل", en:"BYD Seal", bat:82.5, cons:155},
+  {ar:"BYD دولفين", en:"BYD Dolphin", bat:44.9, cons:145},
+  {ar:"BYD سونج بلس EV", en:"BYD Song Plus EV", bat:71.7, cons:175},
+  {ar:"MG ZS EV", en:"MG ZS EV", bat:49, cons:170},
+  {ar:"MG4", en:"MG4", bat:61, cons:160},
+  {ar:"هيونداي كونا إلكتريك", en:"Hyundai Kona Electric", bat:64, cons:150},
+  {ar:"هيونداي أيونيك 5", en:"Hyundai Ioniq 5", bat:72.6, cons:175},
+  {ar:"كيا نيرو EV", en:"Kia Niro EV", bat:64.8, cons:155},
+  {ar:"كيا EV6", en:"Kia EV6", bat:74, cons:170},
+  {ar:"فولكس فاجن ID.4", en:"Volkswagen ID.4", bat:77, cons:175},
+  {ar:"فولكس فاجن ID.6", en:"Volkswagen ID.6", bat:83.4, cons:185},
+  {ar:"شيفروليه بولت", en:"Chevrolet Bolt", bat:60, cons:160},
+  {ar:"تويوتا bZ4X", en:"Toyota bZ4X", bat:64, cons:165},
+  {ar:"جيلي جيومتري C", en:"Geely Geometry C", bat:70, cons:160},
+  {ar:"شانجان إيدو EV460", en:"Changan Eado EV460", bat:52.6, cons:155},
+  {ar:"رينو زوي", en:"Renault Zoe", bat:52, cons:150},
+  {ar:"BMW i3", en:"BMW i3", bat:42.2, cons:150},
+  {custom:true, bat:null, cons:null},
+];
+
+/* قائمة استرشادية لمحطات شحن معروفة في الأردن (إحداثيات تقريبية) */
+const STATIONS = [
+  {ar:"المناصير — ممر عبدون", en:"Manaseer — Abdoun Corridor", cityAr:"عمان", cityEn:"Amman", lat:31.9469, lng:35.8815, type:"fast"},
+  {ar:"المناصير — طريق المطار", en:"Manaseer — Airport Road", cityAr:"عمان", cityEn:"Amman", lat:31.8410, lng:35.9050, type:"fast"},
+  {ar:"المناصير — الدوار الثامن", en:"Manaseer — 8th Circle", cityAr:"عمان", cityEn:"Amman", lat:31.9590, lng:35.8430, type:"fast"},
+  {ar:"تاج مول — عبدون", en:"Taj Mall — Abdoun", cityAr:"عمان", cityEn:"Amman", lat:31.9434, lng:35.8923, type:"slow"},
+  {ar:"سيتي مول", en:"City Mall", cityAr:"عمان", cityEn:"Amman", lat:31.9776, lng:35.8463, type:"slow"},
+  {ar:"مكة مول", en:"Mecca Mall", cityAr:"عمان", cityEn:"Amman", lat:31.9697, lng:35.8569, type:"slow"},
+  {ar:"العبدلي بوليفارد", en:"Abdali Boulevard", cityAr:"عمان", cityEn:"Amman", lat:31.9628, lng:35.9094, type:"slow"},
+  {ar:"جاليريا مول — عبدون", en:"Galleria Mall — Abdoun", cityAr:"عمان", cityEn:"Amman", lat:31.9505, lng:35.8790, type:"slow"},
+  {ar:"IKEA — طريق المطار", en:"IKEA — Airport Road", cityAr:"عمان", cityEn:"Amman", lat:31.8458, lng:35.9094, type:"slow"},
+  {ar:"الشميساني — منطقة البنوك", en:"Shmeisani — Banks District", cityAr:"عمان", cityEn:"Amman", lat:31.9665, lng:35.9000, type:"slow"},
+  {ar:"صويلح — شارع الجامعة", en:"Sweileh — University Street", cityAr:"عمان", cityEn:"Amman", lat:32.0205, lng:35.8615, type:"slow"},
+  {ar:"ماركا — شارع الملك عبدالله", en:"Marka — King Abdullah Street", cityAr:"عمان", cityEn:"Amman", lat:31.9810, lng:35.9870, type:"slow"},
+  {ar:"الجاردنز — وصفي التل", en:"Gardens — Wasfi Al-Tal Street", cityAr:"عمان", cityEn:"Amman", lat:31.9784, lng:35.8740, type:"slow"},
+  {ar:"الزرقاء الجديدة", en:"New Zarqa", cityAr:"الزرقاء", cityEn:"Zarqa", lat:32.0625, lng:36.0942, type:"slow"},
+  {ar:"إربد — شارع الجامعة", en:"Irbid — University Street", cityAr:"إربد", cityEn:"Irbid", lat:32.5390, lng:35.8590, type:"slow"},
+  {ar:"إربد — مجمع عمان الجديد", en:"Irbid — New Amman Bus Complex", cityAr:"إربد", cityEn:"Irbid", lat:32.5495, lng:35.8480, type:"fast"},
+  {ar:"السلط — القبس للشحن (R&M)", en:"As-Salt — R&M Alqabas Charging", cityAr:"السلط", cityEn:"As-Salt", lat:32.0392, lng:35.7272, type:"slow"},
+  {ar:"مادبا — شارع الملك عبدالله", en:"Madaba — King Abdullah Street", cityAr:"مادبا", cityEn:"Madaba", lat:31.7157, lng:35.7956, type:"slow"},
+  {ar:"جرش — المدخل الجنوبي", en:"Jerash — South Entrance", cityAr:"جرش", cityEn:"Jerash", lat:32.2730, lng:35.8930, type:"slow"},
+  {ar:"البحر الميت — المنطقة الفندقية", en:"Dead Sea — Hotels Area", cityAr:"البحر الميت", cityEn:"Dead Sea", lat:31.7185, lng:35.5880, type:"slow"},
+  {ar:"الكرك — طريق الملوك", en:"Karak — King's Highway", cityAr:"الكرك", cityEn:"Karak", lat:31.1853, lng:35.7048, type:"slow"},
+  {ar:"استراحة الطريق الصحراوي — القطرانة", en:"Desert Highway Rest Stop — Qatraneh", cityAr:"الطريق الصحراوي", cityEn:"Desert Highway", lat:31.2400, lng:36.0480, type:"fast"},
+  {ar:"معان — الطريق الصحراوي", en:"Ma'an — Desert Highway", cityAr:"معان", cityEn:"Ma'an", lat:30.1962, lng:35.7341, type:"fast"},
+  {ar:"وادي موسى — البتراء", en:"Wadi Musa — Petra", cityAr:"البتراء", cityEn:"Petra", lat:30.3215, lng:35.4790, type:"slow"},
+  {ar:"العقبة — شارع الحمامات التونسية", en:"Aqaba — Al-Hammamat Al-Tunisyya St.", cityAr:"العقبة", cityEn:"Aqaba", lat:29.5267, lng:35.0078, type:"fast"},
+  {ar:"العقبة — المنطقة الاقتصادية", en:"Aqaba — Economic Zone", cityAr:"العقبة", cityEn:"Aqaba", lat:29.5500, lng:35.0060, type:"slow"},
+];
+
+const CITIES = [
+  {ar:"عمان", en:"Amman", lat:31.9539, lng:35.9106},
+  {ar:"الزرقاء", en:"Zarqa", lat:32.0728, lng:36.0880},
+  {ar:"إربد", en:"Irbid", lat:32.5556, lng:35.8500},
+  {ar:"السلط", en:"As-Salt", lat:32.0392, lng:35.7272},
+  {ar:"مادبا", en:"Madaba", lat:31.7157, lng:35.7956},
+  {ar:"جرش", en:"Jerash", lat:32.2811, lng:35.8911},
+  {ar:"عجلون", en:"Ajloun", lat:32.3326, lng:35.7517},
+  {ar:"المفرق", en:"Mafraq", lat:32.3434, lng:36.2076},
+  {ar:"الكرك", en:"Karak", lat:31.1853, lng:35.7048},
+  {ar:"الطفيلة", en:"Tafileh", lat:30.8375, lng:35.6042},
+  {ar:"معان", en:"Ma'an", lat:30.1962, lng:35.7341},
+  {ar:"البتراء (وادي موسى)", en:"Petra (Wadi Musa)", lat:30.3215, lng:35.4790},
+  {ar:"البحر الميت", en:"Dead Sea", lat:31.7185, lng:35.5880},
+  {ar:"العقبة", en:"Aqaba", lat:29.5320, lng:35.0060},
+  {ar:"مطار الملكة علياء", en:"Queen Alia Airport", lat:31.7226, lng:35.9932},
+];
+
+const CHARGER_KW = {home:7, slow:22, fast:60};
+const CHARGE_EFF = {home:0.90, slow:0.90, fast:0.93}; // كفاءة الشحن (فاقد)
+const ROAD_FACTOR = 1.3;   // معامل تحويل المسافة الجوية لمسافة طرق
+const SAFETY = 0.92;       // هامش أمان للمدى
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const fmt = (n,d=1) => Number(n).toLocaleString("en", {maximumFractionDigits:d});
+const name = obj => LANG==="ar" ? obj.ar : obj.en;
+const cityName = st => LANG==="ar" ? st.cityAr : st.cityEn;
+
+function haversine(a, b){
+  const R=6371, x=v=>v*Math.PI/180;
+  const dLat=x(b.lat-a.lat), dLng=x(b.lng-a.lng);
+  const h=Math.sin(dLat/2)**2 + Math.cos(x(a.lat))*Math.cos(x(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function gmapsDir(dest){
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;
+}
+function currentPeriod(h = new Date().getHours()){
+  if(h>=17 && h<23) return "peak";
+  if(h>=5 && h<14) return "off";
+  return "partial";
+}
+
+/* ============ LANGUAGE ============ */
+function rebuildSelect(sel, items, labelFn){
+  const prev = sel.value;
+  sel.innerHTML = "";
+  items.forEach((it,i)=> sel.appendChild(new Option(labelFn(it), i)));
+  if(prev!=="") sel.value = prev;
+}
+function applyLang(){
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG==="ar" ? "rtl" : "ltr";
+  document.title = t("app_title");
+  $("langBtn").textContent = t("lang_btn");
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const v = I18N[LANG][el.dataset.i18n];
+    if(typeof v === "string") el.textContent = v;
+  });
+  rebuildSelect($("carModel"), CARS, c=> c.custom ? t("custom_car") : name(c));
+  rebuildSelect($("tripFrom"), CITIES, name);
+  rebuildSelect($("tripTo"), CITIES, name);
+  updateCarStats();
+  renderStations();
+  if(map) rebuildMarkers();
+  // أعد عرض النتائج المفتوحة باللغة الجديدة
+  if($("tripResult").innerHTML) planTrip();
+  if($("calcStats").style.display==="grid") doCalc();
+}
+$("langBtn").addEventListener("click", ()=>{
+  LANG = LANG==="ar" ? "en" : "ar";
+  localStorage.setItem("shahnetak-lang", LANG);
+  applyLang();
+});
+
+/* ============ TABS ============ */
+document.querySelectorAll(".tab").forEach(tb=>{
+  tb.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+    tb.classList.add("active");
+    $("panel-"+tb.dataset.panel).classList.add("active");
+    if(tb.dataset.panel==="stations") initMap();
+  });
+});
+
+/* ============ CAR PANEL ============ */
+const carSel = $("carModel");
+carSel.addEventListener("change", ()=>{
+  const c = CARS[carSel.value];
+  if(c.bat){ $("battery").value=c.bat; $("consumption").value=c.cons; }
+  updateCarStats();
+});
+
+function carState(){
+  return {
+    model:+carSel.value,
+    bat:+$("battery").value || 40,
+    cons:+$("consumption").value || 160,
+    soc:+$("soc").value,
+    charger:$("chargerType").value,
+  };
+}
+function rangeKm(bat, cons, socPct){ return bat*(socPct/100)*SAFETY/(cons/1000); }
+
+function updateCarStats(){
+  const s = carState();
+  $("socVal").textContent = s.soc+"%";
+  $("rangeNow").textContent = fmt(rangeKm(s.bat,s.cons,s.soc),0);
+  $("rangeFull").textContent = fmt(rangeKm(s.bat,s.cons,100),0);
+  $("kwhNow").textContent = fmt(s.bat*s.soc/100,1);
+}
+["battery","consumption","soc"].forEach(id=>$(id).addEventListener("input",updateCarStats));
+
+/* حفظ محلي بدل تسجيل الدخول */
+const LS_KEY="shahnetak-profile";
+function flashNote(msg){
+  $("savedNote").textContent = msg;
+  $("savedNote").style.display="block";
+  setTimeout(()=>$("savedNote").style.display="none", 3500);
+}
+$("saveBtn").addEventListener("click", ()=>{
+  localStorage.setItem(LS_KEY, JSON.stringify({...carState(), tariff:getTariff()}));
+  flashNote(t("saved_ok"));
+});
+$("clearBtn").addEventListener("click", ()=>{
+  localStorage.removeItem(LS_KEY);
+  flashNote(t("saved_cleared"));
+});
+
+/* ============ STATIONS PANEL ============ */
+let map=null, userPos=null, userMarker=null, markers=[];
+function rebuildMarkers(){
+  markers.forEach(m=>map.removeLayer(m));
+  markers = STATIONS.map(st=>{
+    const icon = st.type==="fast" ? "⚡" : "🔌";
+    return L.marker([st.lat,st.lng]).addTo(map)
+      .bindPopup(`<b>${icon} ${name(st)}</b><br>${cityName(st)}<br><a href="${gmapsDir(st)}" target="_blank">${t("open_route")}</a>`);
+  });
+}
+function initMap(){
+  if(map){ setTimeout(()=>map.invalidateSize(),100); return; }
+  map = L.map("map").setView([31.5, 35.9], 7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    attribution:'&copy; OpenStreetMap', maxZoom:18,
+  }).addTo(map);
+  rebuildMarkers();
+  renderStations();
+}
+
+function renderStations(){
+  const list = $("stationList");
+  const s = carState();
+  const range = rangeKm(s.bat,s.cons,s.soc);
+  let items = STATIONS.map(st=>({...st, dist: userPos ? haversine(userPos,st)*ROAD_FACTOR : null}));
+  if(userPos) items.sort((a,b)=>a.dist-b.dist);
+  list.innerHTML = items.slice(0, userPos?12:STATIONS.length).map(st=>{
+    const typeLbl = st.type==="fast" ? `<span class="pill fast">${t("pill_fast")}</span>` : `<span class="pill slow">${t("pill_slow")}</span>`;
+    const distLbl = st.dist!=null ? `≈ ${fmt(st.dist,0)} ${t("km")}` : "";
+    const reach = st.dist!=null && st.dist<=range ? ` <span class="pill ok">${t("pill_inrange")}</span>` : "";
+    return `<div class="station">
+      <div><div class="name">${name(st)}</div>
+      <div class="meta">${cityName(st)} ${distLbl}</div>
+      <div style="margin-top:4px;">${typeLbl}${reach}</div></div>
+      <a href="${gmapsDir(st)}" target="_blank" rel="noopener">${t("route")}</a>
+    </div>`;
+  }).join("");
+}
+
+$("locateBtn").addEventListener("click", ()=>{
+  $("locateBtn").textContent = t("btn_locating");
+  navigator.geolocation.getCurrentPosition(p=>{
+    userPos = {lat:p.coords.latitude, lng:p.coords.longitude};
+    $("locateBtn").textContent = t("btn_locate");
+    $("gmapsSearch").href = `https://www.google.com/maps/search/EV+charging+station/@${userPos.lat},${userPos.lng},13z`;
+    initMap();
+    if(userMarker) map.removeLayer(userMarker);
+    userMarker = L.circleMarker([userPos.lat,userPos.lng],{radius:9,color:"#34d399",fillColor:"#34d399",fillOpacity:.7})
+      .addTo(map).bindPopup(t("your_loc")).openPopup();
+    map.setView([userPos.lat,userPos.lng], 11);
+    renderStations();
+  }, ()=>{
+    $("locateBtn").textContent = t("btn_locate");
+    alert(t("loc_fail"));
+    initMap(); renderStations();
+  }, {enableHighAccuracy:true, timeout:10000});
+});
+
+/* ============ TRIP PANEL ============ */
+let tripOrigin=null; // موقع GPS اختياري
+
+$("tripSoc").addEventListener("input", ()=> $("tripSocVal").textContent=$("tripSoc").value+"%");
+
+$("useMyLocation").addEventListener("click", ()=>{
+  $("useMyLocation").textContent = t("btn_myloc_busy");
+  navigator.geolocation.getCurrentPosition(p=>{
+    tripOrigin={lat:p.coords.latitude,lng:p.coords.longitude};
+    $("useMyLocation").textContent = t("btn_myloc_ok");
+  },()=>{ $("useMyLocation").textContent = t("btn_myloc"); alert(t("loc_fail")); });
+});
+$("tripFrom").addEventListener("change",()=>{ tripOrigin=null; $("useMyLocation").textContent = t("btn_myloc"); });
+
+function planTrip(){
+  const s = carState();
+  const from = tripOrigin || CITIES[$("tripFrom").value];
+  const to = CITIES[$("tripTo").value];
+  const soc = +$("tripSoc").value;
+  const legs = +$("roundTrip").value;
+  const dist = haversine(from,to)*ROAD_FACTOR*legs;
+  const range = rangeKm(s.bat, s.cons, soc);
+  const needKwh = dist*(s.cons/1000);
+  const needSoc = Math.min(100, Math.ceil(needKwh/(s.bat*SAFETY)*100));
+
+  // أقرب محطات للوجهة وعلى الخط
+  const nearDest = STATIONS.map(st=>({...st,d:haversine(to,st)}))
+    .sort((a,b)=>a.d-b.d).slice(0,3);
+  const mid = {lat:(from.lat+to.lat)/2, lng:(from.lng+to.lng)/2};
+  const nearMid = STATIONS.map(st=>({...st,d:haversine(mid,st)}))
+    .sort((a,b)=>a.d-b.d).slice(0,2);
+
+  const dirUrl = `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lng}&destination=${to.lat},${to.lng}&travelmode=driving`;
+
+  let cls, head, tips=[];
+  if(range >= dist*1.2){
+    cls="green"; head=t("verdict_green");
+    tips.push(t("tip_remaining")(fmt((range-dist)/range*soc,0)));
+  }else if(range >= dist){
+    cls="yellow"; head=t("verdict_yellow");
+    tips.push(t("tip_slow"));
+    tips.push(t("tip_ac"));
+    tips.push(t("tip_charge_to")(Math.min(100,needSoc+10)));
+  }else{
+    cls="red"; head=t("verdict_red");
+    tips.push(t("tip_need")(needSoc, needSoc>=100));
+    if(nearMid.length) tips.push(t("tip_midstop")(name(nearMid[0]), nearMid[0].type==="fast"));
+    tips.push(t("tip_calm"));
+    tips.push(t("tip_heat"));
+  }
+  if(legs===2 && cls!=="red") tips.push(t("tip_return"));
+
+  $("tripResult").innerHTML = `
+    <div class="verdict ${cls}">
+      <div class="big">${head}</div>
+      <div class="stats" style="margin-top:8px;">
+        <div class="stat"><div class="v">${fmt(dist,0)}</div><div class="l">${legs===2?t("stat_dist_rt"):t("stat_dist")}</div></div>
+        <div class="stat"><div class="v">${fmt(range,0)}</div><div class="l">${t("stat_range")}</div></div>
+        <div class="stat"><div class="v">${fmt(needKwh,1)}</div><div class="l">${t("stat_need_kwh")}</div></div>
+      </div>
+      ${tips.length?`<ul>${tips.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}
+      <a href="${dirUrl}" target="_blank" rel="noopener" style="text-decoration:none;"><button class="btn" style="margin-top:12px;">${t("btn_open_gmaps")}</button></a>
+      <div style="margin-top:12px; font-weight:700; font-size:.9rem;">${t("near_dest")}</div>
+      ${nearDest.map(st=>`<div class="station" style="margin-top:8px;">
+        <div><div class="name">${name(st)}</div><div class="meta">${cityName(st)} — ${t("from_dest")(fmt(st.d*ROAD_FACTOR,0))}</div>
+        <div style="margin-top:4px;">${st.type==="fast"?`<span class="pill fast">${t("pill_fast")}</span>`:`<span class="pill slow">${t("pill_slow")}</span>`}</div></div>
+        <a href="${gmapsDir(st)}" target="_blank" rel="noopener">${t("route")}</a>
+      </div>`).join("")}
+    </div>`;
+}
+$("planBtn").addEventListener("click", planTrip);
+
+/* ============ CALC PANEL ============ */
+function getTariff(){
+  return {
+    off:+$("t-off").value, partial:+$("t-partial").value, peak:+$("t-peak").value,
+    comSlow:+$("t-comSlow").value, comFast:+$("t-comFast").value,
+  };
+}
+$("socBefore").addEventListener("input",()=>$("beforeVal").textContent=$("socBefore").value+"%");
+$("socAfter").addEventListener("input",()=>$("afterVal").textContent=$("socAfter").value+"%");
+
+function doCalc(){
+  const s = carState();
+  const before=+$("socBefore").value, after=+$("socAfter").value;
+  if(after<=before){ alert(t("alert_order")); return; }
+  const tr = getTariff();
+  const where = $("calcCharger").value;
+  let period = $("calcPeriod").value;
+  if(period==="auto") period = currentPeriod();
+
+  const kwhBattery = s.bat*(after-before)/100;           // الطاقة الداخلة للبطارية
+  const kwhGrid = kwhBattery/CHARGE_EFF[where];          // المسحوبة من الشبكة (مع الفاقد)
+  let rate = tr[period];                                 // فلس/ك.و.س
+  if(where==="slow") rate += tr.comSlow;
+  if(where==="fast") rate += tr.comFast;
+  const costJD = kwhGrid*rate/1000;
+  const hours = kwhBattery/CHARGER_KW[where];
+  const timeLbl = hours>=1 ? `${fmt(Math.floor(hours),0)} ${t("unit_h")} ${fmt((hours%1)*60,0)} ${t("unit_min")}` : `${fmt(hours*60,0)} ${t("minutes")}`;
+  const addedKm = kwhBattery/(s.cons/1000)*SAFETY;
+  const perKm = costJD*1000/addedKm;
+
+  $("calcStats").style.display="grid";
+  $("calcKwh").textContent = fmt(kwhBattery,1);
+  $("calcCost").textContent = fmt(costJD,3);
+  $("calcTime").textContent = timeLbl;
+  $("calcPerKm").textContent = fmt(perKm,1);
+
+  // إبراز الفترة المستخدمة + نصيحة التوفير
+  ["off","partial","peak"].forEach(p=>$("lbl-"+p).classList.toggle("active-period", p===period));
+  const cheapest = kwhGrid*(tr.off + (where==="slow"?tr.comSlow : where==="fast"?tr.comFast : 0))/1000;
+  let note = t("note_main")(t("period_"+period), rate, Math.round((1-CHARGE_EFF[where])*100), fmt(kwhGrid,1), fmt(addedKm,0));
+  if(period!=="off" && costJD-cheapest>0.01){
+    note += t("note_save")(fmt(costJD-cheapest,3));
+  }
+  $("calcNote").innerHTML = note;
+}
+$("calcBtn").addEventListener("click", doCalc);
+
+/* ============ INIT ============ */
+applyLang();
+carSel.value = 2; // ليف 40 شائعة بالأردن
+$("tripTo").value = 13; // العقبة كمثال
+(function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(LS_KEY));
+    if(!d) return;
+    carSel.value=d.model; $("battery").value=d.bat; $("consumption").value=d.cons;
+    $("soc").value=d.soc; $("chargerType").value=d.charger;
+    if(d.tariff){ $("t-off").value=d.tariff.off; $("t-partial").value=d.tariff.partial; $("t-peak").value=d.tariff.peak; $("t-comSlow").value=d.tariff.comSlow; $("t-comFast").value=d.tariff.comFast; }
+  }catch(e){}
+})();
+updateCarStats();
+</script>
+</body>
+</html>
