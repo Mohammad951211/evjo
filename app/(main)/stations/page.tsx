@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Navigation, X, RefreshCw, Search, MapPin } from "lucide-react";
+import { Navigation, X, RefreshCw, Search, MapPin, SlidersHorizontal, Crosshair } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ export default function StationsPage() {
 
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [connFilter, setConnFilter] = useState("all");
   const [powerFilter, setPowerFilter] = useState("all");
   const [operatorFilter, setOperatorFilter] = useState("all");
@@ -131,6 +132,10 @@ export default function StationsPage() {
 
   const name = (s: StationDto) => (locale === "ar" && s.nameAr ? s.nameAr : s.nameEn);
 
+  const activeFilterCount = [connFilter, powerFilter, operatorFilter, statusFilter].filter(
+    (f) => f !== "all"
+  ).length;
+
   function pickStation(s: StationDto) {
     setMapCenter([s.latitude, s.longitude]);
     setSelected(s);
@@ -139,19 +144,42 @@ export default function StationsPage() {
   }
 
   return (
-    <div className="animate-slide-up pt-2">
-      <div className="pb-3">
-        <div className="flex items-center justify-between">
+    <div className="pt-2">
+      <div className="animate-slide-up">
+      <div className="pb-2">
+        <div className="flex items-center justify-between gap-2">
           <h1 className="text-lg font-bold">{t.stationsTitle}</h1>
-          <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing}>
-            <RefreshCw className={refreshing ? "animate-spin" : ""} />
-            {t.refreshStations}
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              aria-label={t.filterConnector}
+              className={`relative flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                showFilters || activeFilterCount > 0
+                  ? "border-primary bg-accent text-primary"
+                  : "text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {activeFilterCount > 0 && (
+                <span className="num flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={refresh}
+              disabled={refreshing}
+              aria-label={t.refreshStations}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
         {refreshMsg && <p className="mt-1 text-xs font-semibold text-primary">{refreshMsg}</p>}
 
         {/* Search */}
-        <div className="relative mt-3">
+        <div className="relative mt-2.5">
           <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ltr:left-3 rtl:right-3" />
           <Input
             value={query}
@@ -173,7 +201,7 @@ export default function StationsPage() {
             </button>
           )}
           {searchFocused && searchResults.length > 0 && (
-            <div className="absolute inset-x-0 top-12 z-[1000] overflow-hidden rounded-xl border bg-card card-shadow">
+            <div className="absolute inset-x-0 top-12 z-[1200] overflow-hidden rounded-xl border bg-card card-shadow">
               {searchResults.map((s) => (
                 <button
                   key={s.id}
@@ -197,8 +225,9 @@ export default function StationsPage() {
           )}
         </div>
 
-        {/* Filters */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        {/* Filters — collapsible */}
+        {showFilters && (
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
           <Select value={connFilter} onChange={(e) => setConnFilter(e.target.value)} className="h-9 text-xs">
             <option value="all">{t.filterConnector}: {t.allF}</option>
             <option value="CCS2">CCS2</option>
@@ -225,27 +254,33 @@ export default function StationsPage() {
             <option value="UNKNOWN">{t.unknown}</option>
           </Select>
         </div>
+        )}
 
         {nearestCompatible && (
           <button
-            onClick={() => setSelected(nearestCompatible)}
-            className="mt-3 flex w-full items-center justify-between rounded-xl border border-primary/30 bg-accent px-4 py-2.5 text-start"
+            onClick={() => pickStation(nearestCompatible)}
+            className="mt-2.5 flex w-full items-center justify-between gap-2 rounded-xl border border-primary/30 bg-accent px-3.5 py-2 text-start"
           >
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
-                {t.nearestCompatible}
-              </p>
-              <p className="line-clamp-1 text-sm font-semibold">{name(nearestCompatible)}</p>
-            </div>
-            <p className="num shrink-0 text-sm font-bold text-primary">
-              {nearestCompatible.distanceKm!.toFixed(2)} {t.km} · {nearestCompatible.driveMin} {t.min}
-            </p>
+            <span className="flex min-w-0 items-center gap-2">
+              <Crosshair className="h-4 w-4 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-primary">
+                  {t.nearestCompatible}
+                </span>
+                <span className="line-clamp-1 text-sm font-semibold">{name(nearestCompatible)}</span>
+              </span>
+            </span>
+            <span className="num shrink-0 text-xs font-bold text-primary">
+              {nearestCompatible.distanceKm!.toFixed(1)} {t.km}
+            </span>
           </button>
         )}
       </div>
 
-      {/* Map */}
-      <div className="relative h-[52dvh] min-h-[340px] overflow-hidden rounded-2xl border card-shadow">
+      {/* Map — the hero of this screen */}
+      <div className="relative h-[calc(100dvh-var(--map-offset,300px))] min-h-[440px] overflow-hidden rounded-2xl border card-shadow"
+        style={{ ["--map-offset" as string]: showFilters ? "360px" : "260px" }}
+      >
         <StationMap
           center={mapCenter ?? [origin.lat, origin.lng]}
           userLocation={location ? [location.lat, location.lng] : null}
@@ -257,12 +292,13 @@ export default function StationsPage() {
           }}
         />
       </div>
+      </div>
 
-      {/* Detail sheet */}
+      {/* Detail sheet — z above Leaflet's internal layers (~z-1000) */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 z-[2000] flex items-end justify-center bg-black/50" onClick={() => setSelected(null)}>
           <div
-            className="w-full max-w-md animate-slide-up rounded-t-3xl bg-card p-5 pb-8"
+            className="max-h-[85dvh] w-full max-w-md animate-slide-up overflow-y-auto rounded-t-3xl bg-card p-5 pb-8"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -325,17 +361,30 @@ export default function StationsPage() {
               {selected.source && <span>{t.dataSource}: {selected.source}</span>}
             </div>
 
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${selected.latitude},${selected.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 block"
-            >
-              <Button className="w-full" size="lg">
-                <Navigation />
-                {t.navigate}
-              </Button>
-            </a>
+            <div className="mt-4 flex gap-2">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${selected.latitude},${selected.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1"
+              >
+                <Button variant="outline" className="w-full" size="lg">
+                  <MapPin />
+                  {t.viewMap}
+                </Button>
+              </a>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${selected.latitude},${selected.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1"
+              >
+                <Button className="w-full" size="lg">
+                  <Navigation />
+                  {t.navigate}
+                </Button>
+              </a>
+            </div>
           </div>
         </div>
       )}
