@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { MapPin, Plus, Trash2, Zap } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Camera, MapPin, Plus, Trash2, X, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,29 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import type { StationDto } from "@/types";
+
+/** Downscale + JPEG-compress a photo client-side so uploads stay tiny. */
+async function compressImage(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result as string);
+    fr.onerror = () => reject(fr.error);
+    fr.readAsDataURL(file);
+  });
+  const img = document.createElement("img");
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("bad image"));
+    img.src = dataUrl;
+  });
+  const MAX = 1280;
+  const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.72);
+}
 
 /** Admin: add missing stations by hand + manage the manually added list. */
 export function AdminStations() {
@@ -22,8 +45,22 @@ export function AdminStations() {
   const [connType, setConnType] = useState("CCS2");
   const [powerKw, setPowerKw] = useState("50");
   const [quantity, setQuantity] = useState("1");
+  const [image, setImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setImage(await compressImage(file));
+      setMsg(null);
+    } catch {
+      setMsg({ ok: false, text: t.photoError });
+    }
+  }
 
   const load = useCallback(() => {
     fetch("/api/admin/stations")
@@ -45,6 +82,7 @@ export function AdminStations() {
         location,
         town: town || null,
         operator: operator || null,
+        image,
         connector: { type: connType, powerKw: Number(powerKw), quantity: Number(quantity) },
       }),
     });
@@ -55,6 +93,7 @@ export function AdminStations() {
       setLocation("");
       setTown("");
       setOperator("");
+      setImage(null);
       load();
     } else {
       const d = await res.json().catch(() => ({}));
@@ -132,6 +171,41 @@ export function AdminStations() {
                 <Input type="number" dir="ltr" min={1} step={1} value={quantity} onChange={(e) => setQuantity(e.target.value)} />
               </div>
             </div>
+            {/* Photo (optional) */}
+            <div>
+              <Label>{t.stationPhotoLabel}</Label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onPickPhoto}
+              />
+              {image ? (
+                <div className="relative overflow-hidden rounded-xl border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image} alt="" className="h-36 w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImage(null)}
+                    aria-label={t.removePhoto}
+                    className="absolute end-2 top-2 rounded-full bg-black/60 p-1.5 text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  <Camera className="h-5 w-5" />
+                  {t.choosePhoto}
+                </button>
+              )}
+            </div>
+
             {msg && (
               <p className={`text-sm font-semibold ${msg.ok ? "text-primary" : "text-destructive"}`}>
                 {msg.text}
@@ -157,9 +231,14 @@ export function AdminStations() {
           <div className="space-y-2">
             {manual.map((s) => (
               <div key={s.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3.5 card-shadow">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent">
-                  <MapPin className="h-4 w-4 text-primary" />
-                </div>
+                {s.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.image} alt="" className="h-11 w-11 shrink-0 rounded-xl border object-cover" />
+                ) : (
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-1 text-sm font-bold">{stationName(s)}</p>
                   <p className="num text-[11px] text-muted-foreground" dir="ltr">

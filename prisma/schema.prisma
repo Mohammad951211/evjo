@@ -116,6 +116,7 @@ model Station {
   maxPowerKw   Float
   totalPoints  Int               @default(1)
   pricing      String?
+  image        String? // compressed JPEG data-URL (admin-uploaded station photo)
   updatedAt    DateTime          @updatedAt
   createdAt    DateTime          @default(now())
   sessions     ChargingSession[]

@@ -237,6 +237,10 @@ export const en: Dict = {
   stationAdded: "Station added — it's now live on the map",
   manualStationsTitle: "Manually added stations",
   noManualStations: "No manually added stations yet",
+  stationPhotoLabel: "Station photo (optional)",
+  choosePhoto: "Choose photo",
+  removePhoto: "Remove photo",
+  photoError: "Couldn't process the photo — try another one",
 
   profileTitle: "Profile",
   language: "Language",

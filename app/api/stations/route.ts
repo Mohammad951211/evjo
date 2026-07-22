@@ -25,6 +25,30 @@ export async function GET() {
     }
   }
 
-  const stations = await prisma.station.findMany({ orderBy: { maxPowerKw: "desc" } });
+  // image is excluded here to keep the list payload light —
+  // the detail sheet fetches it lazily via /api/stations/[id]
+  const stations = await prisma.station.findMany({
+    orderBy: { maxPowerKw: "desc" },
+    select: {
+      id: true,
+      ocmId: true,
+      osmId: true,
+      nameEn: true,
+      nameAr: true,
+      operator: true,
+      latitude: true,
+      longitude: true,
+      address: true,
+      town: true,
+      status: true,
+      connectors: true,
+      maxPowerKw: true,
+      totalPoints: true,
+      pricing: true,
+      source: true,
+      updatedAt: true,
+      createdAt: true,
+    },
+  });
   return NextResponse.json({ stations });
 }

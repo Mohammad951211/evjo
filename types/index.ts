@@ -53,6 +53,7 @@ export interface StationDto {
   maxPowerKw: number;
   totalPoints: number;
   source?: string;
+  image?: string | null;
   pricing: string | null;
   distanceKm?: number;
   driveMin?: number;

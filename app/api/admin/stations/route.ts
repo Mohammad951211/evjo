@@ -83,8 +83,21 @@ export async function POST(req: Request) {
       }
     : null;
 
+  // optional photo: compressed data-URL from the client, hard-capped
+  let image: string | null = null;
+  if (typeof body?.image === "string" && body.image.length > 0) {
+    if (
+      !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(body.image) ||
+      body.image.length > 1_200_000
+    ) {
+      return NextResponse.json({ error: "bad_image" }, { status: 400 });
+    }
+    image = body.image;
+  }
+
   const station = await prisma.station.create({
     data: {
+      image,
       nameEn: name,
       nameAr: /[؀-ۿ]/.test(name) ? name : null,
       operator: body?.operator ? String(body.operator).trim() : null,

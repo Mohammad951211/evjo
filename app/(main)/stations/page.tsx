@@ -30,6 +30,7 @@ export default function StationsPage() {
   const [stations, setStations] = useState<StationDto[]>([]);
   const [garage, setGarage] = useState<GarageVehicle[]>([]);
   const [selected, setSelected] = useState<StationDto | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
@@ -52,6 +53,22 @@ export default function StationsPage() {
       .then((r) => r.json())
       .then((d) => setGarage(d.vehicles ?? []));
   }, []);
+
+  // photo is heavy, so it's fetched only when the detail sheet opens
+  useEffect(() => {
+    setSelectedImage(null);
+    if (!selected) return;
+    let alive = true;
+    fetch(`/api/stations/${selected.id}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive && d.station?.image) setSelectedImage(d.station.image);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const operators = useMemo(
     () => Array.from(new Set(stations.map((s) => s.operator).filter(Boolean))) as string[],
@@ -304,6 +321,14 @@ export default function StationsPage() {
             aria-modal="true"
           >
             <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
+            {selectedImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selectedImage}
+                alt={name(selected)}
+                className="mb-4 h-44 w-full rounded-2xl border object-cover"
+              />
+            )}
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-bold">{name(selected)}</h2>

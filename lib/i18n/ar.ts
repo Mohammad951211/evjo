@@ -249,6 +249,10 @@ export const ar = {
   stationAdded: "تمت إضافة المحطة — صارت ظاهرة على الخريطة",
   manualStationsTitle: "المحطات المضافة يدوياً",
   noManualStations: "ما أضفت أي محطة يدوياً بعد",
+  stationPhotoLabel: "صورة المحطة (اختياري)",
+  choosePhoto: "اختر صورة",
+  removePhoto: "إزالة الصورة",
+  photoError: "تعذّرت معالجة الصورة — جرّب صورة أخرى",
 
   // Profile
   profileTitle: "الملف الشخصي",
