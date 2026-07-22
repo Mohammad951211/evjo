@@ -5,6 +5,7 @@ import { ShieldCheck, Users, Car, Zap, CheckCircle2, Clock } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminStations } from "@/components/admin-stations";
 import { useI18n } from "@/lib/i18n";
 import { JO_CITIES } from "@/lib/geo";
 
@@ -24,6 +25,7 @@ interface AdminUser {
 
 export default function AdminPage() {
   const { t, locale } = useI18n();
+  const [tab, setTab] = useState<"users" | "stations">("users");
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [forbidden, setForbidden] = useState(false);
 
@@ -69,10 +71,29 @@ export default function AdminPage() {
     <div className="animate-slide-up pt-2">
       <h1 className="flex items-center gap-2 text-lg font-bold">
         <ShieldCheck className="h-5 w-5 text-primary" />
-        {t.adminTitle}
+        {t.adminPanel}
       </h1>
 
-      {users === null ? (
+      {/* Tabs */}
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+        {(["users", "stations"] as const).map((tb) => (
+          <button
+            key={tb}
+            onClick={() => setTab(tb)}
+            className={`rounded-lg py-2 text-sm font-bold transition-colors ${
+              tab === tb ? "bg-card text-primary card-shadow" : "text-muted-foreground"
+            }`}
+          >
+            {tb === "users" ? t.adminTabUsers : t.adminTabStations}
+          </button>
+        ))}
+      </div>
+
+      {tab === "stations" ? (
+        <div className="mt-4">
+          <AdminStations />
+        </div>
+      ) : users === null ? (
         <div className="mt-4 space-y-3">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-24 w-full" />
