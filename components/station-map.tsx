@@ -39,12 +39,15 @@ export default function StationMap({
   stations,
   highlightedId,
   onSelect,
+  rangeKm,
 }: {
   center: [number, number];
   userLocation: [number, number] | null;
   stations: StationDto[];
   highlightedId?: string | null;
   onSelect: (s: StationDto) => void;
+  /** remaining-range ring radius (km), drawn around the user/center */
+  rangeKm?: number | null;
 }) {
   return (
     <MapContainer
@@ -65,6 +68,19 @@ export default function StationMap({
             pathOptions={{ color: "#1B7A4B", weight: 1, fillOpacity: 0.04 }}
           />
         </>
+      )}
+      {rangeKm != null && rangeKm > 0 && (
+        <Circle
+          center={userLocation ?? center}
+          radius={rangeKm * 1000}
+          pathOptions={{
+            color: "#B45309",
+            weight: 2,
+            dashArray: "8 8",
+            fillColor: "#B45309",
+            fillOpacity: 0.05,
+          }}
+        />
       )}
       {stations.map((s) => (
         <Marker

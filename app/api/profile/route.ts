@@ -42,3 +42,17 @@ export async function PATCH(req: Request) {
   const user = await prisma.user.update({ where: { id: uid }, data });
   return NextResponse.json({ ok: true, user: { name: user.name, city: user.city } });
 }
+
+/** Permanently delete the account and everything attached to it. */
+export async function DELETE() {
+  const uid = await currentUserId();
+  if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const user = await prisma.user.findUnique({ where: { id: uid }, select: { phone: true } });
+  // vehicles / sessions / favorites / reports cascade via the schema
+  await prisma.user.delete({ where: { id: uid } });
+  if (user?.phone) {
+    await prisma.otpCode.deleteMany({ where: { phone: user.phone } });
+  }
+  return NextResponse.json({ ok: true });
+}

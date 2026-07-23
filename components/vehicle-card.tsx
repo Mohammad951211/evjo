@@ -1,6 +1,6 @@
 "use client";
 
-import { Car, BatteryFull, Gauge, PlugZap, Zap } from "lucide-react";
+import { Car, BatteryFull, Gauge, PlugZap, Zap, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
@@ -18,11 +18,13 @@ export function VehicleCard({
   v,
   onSetDefault,
   onDelete,
+  onRename,
   actions,
 }: {
   v: GarageVehicle;
   onSetDefault?: () => void;
   onDelete?: () => void;
+  onRename?: () => void;
   actions?: boolean;
 }) {
   const { t } = useI18n();
@@ -84,6 +86,15 @@ export function VehicleCard({
 
         {actions && (
           <div className="mt-4 flex gap-2">
+            {onRename && (
+              <button
+                onClick={onRename}
+                aria-label={t.renameVehicle}
+                className="rounded-lg border px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
             {!v.isDefault && onSetDefault && (
               <button
                 onClick={onSetDefault}

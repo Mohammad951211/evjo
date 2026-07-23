@@ -36,6 +36,17 @@ export default function GaragePage() {
     load();
   }
 
+  async function rename(v: GarageVehicle) {
+    const nickname = window.prompt(t.renamePrompt, v.nickname ?? "");
+    if (nickname === null) return;
+    await fetch(`/api/garage/${v.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: nickname.trim() }),
+    });
+    load();
+  }
+
   return (
     <div className="animate-slide-up pt-2">
       <div className="flex items-center justify-between">
@@ -64,6 +75,7 @@ export default function GaragePage() {
               actions
               onSetDefault={() => setDefault(v.id)}
               onDelete={() => remove(v.id)}
+              onRename={() => rename(v)}
             />
           ))
         )}

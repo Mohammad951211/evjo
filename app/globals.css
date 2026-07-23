@@ -28,6 +28,29 @@
     --radius: 1rem;
   }
 
+  .dark {
+    --background: 160 16% 8%;
+    --foreground: 150 10% 93%;
+    --card: 160 14% 11%;
+    --card-foreground: 150 10% 93%;
+    --popover: 160 14% 11%;
+    --popover-foreground: 150 10% 93%;
+    --primary: 150 52% 42%;
+    --primary-foreground: 0 0% 100%;
+    --primary-dark: 152 45% 22%;
+    --secondary: 160 12% 16%;
+    --secondary-foreground: 150 20% 85%;
+    --muted: 160 12% 15%;
+    --muted-foreground: 150 8% 62%;
+    --accent: 156 28% 17%;
+    --accent-foreground: 150 40% 82%;
+    --destructive: 350 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 160 10% 21%;
+    --input: 160 10% 26%;
+    --ring: 150 52% 45%;
+  }
+
   * {
     @apply border-border;
   }
@@ -69,6 +92,19 @@
   direction: ltr;
   font: inherit;
   border-radius: var(--radius);
+}
+
+/* Dark map: invert the tiles, leave our div-icon pins untouched */
+.dark .leaflet-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.7);
+}
+.dark .leaflet-container {
+  background: #111a16;
+}
+.dark .leaflet-bar a {
+  background: #1a241f;
+  color: #d9e5df;
+  border-color: #2a362f;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -15,6 +15,16 @@ export const metadata: Metadata = {
   title: "EV.JO — Always Connected, Always Charged",
   description:
     "مساعد السيارات الكهربائية في الأردن — محطات شحن سريع، مخطط رحلات، وحاسبة تكلفة الشحن حسب فترات التعرفة.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "EV.JO",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -28,6 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
       <body className={plex.className}>
+        {/* theme init before paint — avoids light-flash for dark-mode users */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();",
+          }}
+        />
         <Providers locale={locale}>{children}</Providers>
       </body>
     </html>

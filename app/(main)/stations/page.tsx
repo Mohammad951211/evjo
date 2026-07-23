@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Navigation, X, RefreshCw, Search, MapPin, SlidersHorizontal, Crosshair } from "lucide-react";
+import {
+  Navigation, X, RefreshCw, Search, MapPin, SlidersHorizontal, Crosshair,
+  LocateFixed, Gauge, Star, Share2, Copy, Flag,
+} from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +30,17 @@ const CONNECTOR_LABEL: Record<string, string> = {
 export default function StationsPage() {
   const { t, locale } = useI18n();
   const location = useAppStore((s) => s.location);
+  const setLocation = useAppStore((s) => s.setLocation);
   const [stations, setStations] = useState<StationDto[]>([]);
   const [garage, setGarage] = useState<GarageVehicle[]>([]);
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [favOnly, setFavOnly] = useState(false);
+  const [rangeSoc, setRangeSoc] = useState<number | null>(null);
+  const [rangePanel, setRangePanel] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [reportMode, setReportMode] = useState(false);
+  const [reportNote, setReportNote] = useState("");
+  const [reportDone, setReportDone] = useState(false);
   const [selected, setSelected] = useState<StationDto | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
@@ -52,11 +64,19 @@ export default function StationsPage() {
     fetch("/api/garage")
       .then((r) => r.json())
       .then((d) => setGarage(d.vehicles ?? []));
+    fetch("/api/favorites")
+      .then((r) => (r.ok ? r.json() : { ids: [] }))
+      .then((d) => setFavIds(new Set(d.ids ?? [])))
+      .catch(() => {});
   }, []);
 
   // photo is heavy, so it's fetched only when the detail sheet opens
   useEffect(() => {
     setSelectedImage(null);
+    setReportMode(false);
+    setReportNote("");
+    setReportDone(false);
+    setCopied(false);
     if (!selected) return;
     let alive = true;
     fetch(`/api/stations/${selected.id}`)
@@ -96,6 +116,7 @@ export default function StationsPage() {
         if (powerFilter === "150" && s.maxPowerKw < 150) return false;
         if (operatorFilter !== "all" && s.operator !== operatorFilter) return false;
         if (statusFilter !== "all" && s.status !== statusFilter) return false;
+        if (favOnly && !favIds.has(s.id)) return false;
         if (q) {
           const hay = [s.nameEn, s.nameAr, s.operator, s.town, s.address]
             .filter(Boolean)
@@ -105,7 +126,7 @@ export default function StationsPage() {
         }
         return true;
       }),
-    [enriched, connFilter, powerFilter, operatorFilter, statusFilter, q]
+    [enriched, connFilter, powerFilter, operatorFilter, statusFilter, q, favOnly, favIds]
   );
 
   // top matches for the search dropdown
@@ -160,6 +181,79 @@ export default function StationsPage() {
     setSearchFocused(false);
   }
 
+  async function toggleFav(stationId: string) {
+    const res = await fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stationId }),
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+    setFavIds((prev) => {
+      const next = new Set(prev);
+      if (d.favorited) next.add(stationId);
+      else next.delete(stationId);
+      return next;
+    });
+  }
+
+  function locateMe() {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(loc);
+        setMapCenter([loc.lat, loc.lng]);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10_000 }
+    );
+  }
+
+  const defaultVehicleSpec = (garage.find((v) => v.isDefault) ?? garage[0])?.spec;
+  const rangeKm =
+    rangeSoc != null && defaultVehicleSpec && defaultVehicleSpec.consumption > 0
+      ? Math.round(
+          ((rangeSoc / 100) * (defaultVehicleSpec.usableKwh || defaultVehicleSpec.batteryKwh)) /
+            defaultVehicleSpec.consumption *
+            100
+        )
+      : null;
+
+  async function shareStation(s: StationDto) {
+    const url = `https://www.google.com/maps/search/?api=1&query=${s.latitude},${s.longitude}`;
+    const text = `${name(s)} — ${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: name(s), text: name(s), url });
+        return;
+      } catch {
+        /* user cancelled — fall through to clipboard */
+      }
+    }
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  async function copyCoords(s: StationDto) {
+    await navigator.clipboard.writeText(`${s.latitude}, ${s.longitude}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  async function sendReport() {
+    if (!selected) return;
+    const res = await fetch(`/api/stations/${selected.id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note: reportNote }),
+    });
+    if (res.ok) {
+      setReportDone(true);
+      setReportMode(false);
+    }
+  }
+
   return (
     <div className="pt-2">
       <div className="animate-slide-up">
@@ -167,6 +261,17 @@ export default function StationsPage() {
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-lg font-bold">{t.stationsTitle}</h1>
           <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setFavOnly((v) => !v)}
+              aria-label={t.favOnly}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+                favOnly
+                  ? "border-amber-400 bg-amber-50 text-amber-500 dark:bg-amber-950"
+                  : "text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              <Star className="h-4 w-4" fill={favOnly ? "currentColor" : "none"} />
+            </button>
             <button
               onClick={() => setShowFilters((v) => !v)}
               aria-label={t.filterConnector}
@@ -307,7 +412,66 @@ export default function StationsPage() {
             setMapCenter([s.latitude, s.longitude]);
             setSelected(s);
           }}
+          rangeKm={rangeKm}
         />
+
+        {/* Map overlay controls (above Leaflet's ~z-1000) */}
+        <div className="absolute bottom-4 end-3 z-[1100] flex flex-col gap-2">
+          <button
+            onClick={() => {
+              const opening = !rangePanel;
+              setRangePanel(opening);
+              if (opening && rangeSoc == null && defaultVehicleSpec) setRangeSoc(80);
+            }}
+            aria-label={t.rangeCircle}
+            className={`flex h-11 w-11 items-center justify-center rounded-full border bg-card card-shadow transition-colors ${
+              rangeSoc != null ? "border-amber-500 text-amber-600" : "text-muted-foreground hover:text-primary"
+            }`}
+          >
+            <Gauge className="h-5 w-5" />
+          </button>
+          <button
+            onClick={locateMe}
+            aria-label={t.locateMe}
+            className="flex h-11 w-11 items-center justify-center rounded-full border bg-card text-primary card-shadow transition-colors hover:bg-accent"
+          >
+            <LocateFixed className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Range ring panel */}
+        {rangePanel && (
+          <div className="absolute bottom-4 end-16 z-[1100] w-60 rounded-2xl border bg-card p-4 card-shadow">
+            <p className="mb-2 text-xs font-bold">{t.rangeCircle}</p>
+            {defaultVehicleSpec ? (
+              <>
+                <input
+                  type="range"
+                  min={5}
+                  max={100}
+                  value={rangeSoc ?? 80}
+                  onChange={(e) => setRangeSoc(Number(e.target.value))}
+                  className="w-full accent-[#B45309]"
+                />
+                <p className="num mt-1.5 text-xs font-semibold text-muted-foreground">
+                  {rangeSoc != null && rangeKm != null
+                    ? t.rangeAt(rangeSoc, rangeKm)
+                    : t.rangeAt(80, Math.round(((80 / 100) * (defaultVehicleSpec.usableKwh || defaultVehicleSpec.batteryKwh)) / defaultVehicleSpec.consumption * 100))}
+                </p>
+                {rangeSoc != null && (
+                  <button
+                    onClick={() => { setRangeSoc(null); setRangePanel(false); }}
+                    className="mt-2 w-full rounded-lg border py-1.5 text-xs font-bold text-muted-foreground hover:text-destructive"
+                  >
+                    {t.cancel}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">{t.rangeNeedsVehicle}</p>
+            )}
+          </div>
+        )}
       </div>
       </div>
 
@@ -341,9 +505,20 @@ export default function StationsPage() {
                   </p>
                 )}
               </div>
-              <button onClick={() => setSelected(null)} aria-label={t.cancel} className="rounded-full p-1.5 hover:bg-muted">
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  onClick={() => toggleFav(selected.id)}
+                  aria-label={favIds.has(selected.id) ? t.favRemove : t.favAdd}
+                  className={`rounded-full p-1.5 transition-colors hover:bg-muted ${
+                    favIds.has(selected.id) ? "text-amber-500" : "text-muted-foreground"
+                  }`}
+                >
+                  <Star className="h-5 w-5" fill={favIds.has(selected.id) ? "currentColor" : "none"} />
+                </button>
+                <button onClick={() => setSelected(null)} aria-label={t.cancel} className="rounded-full p-1.5 hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -385,6 +560,51 @@ export default function StationsPage() {
               <span className="num" dir="ltr">{selected.latitude.toFixed(4)}, {selected.longitude.toFixed(4)}</span>
               {selected.source && <span>{t.dataSource}: {selected.source}</span>}
             </div>
+
+            {/* Share / copy / report */}
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                onClick={() => shareStation(selected)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                {t.shareStation}
+              </button>
+              <button
+                onClick={() => copyCoords(selected)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                {copied ? t.copied : t.copyCoords}
+              </button>
+              <button
+                onClick={() => setReportMode((v) => !v)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+              >
+                <Flag className="h-3.5 w-3.5" />
+                {t.reportIssue}
+              </button>
+            </div>
+
+            {reportDone && (
+              <p className="mt-2 rounded-lg bg-accent px-3 py-2 text-xs font-bold text-primary">
+                {t.reportSent}
+              </p>
+            )}
+            {reportMode && !reportDone && (
+              <div className="mt-2 space-y-2">
+                <textarea
+                  value={reportNote}
+                  onChange={(e) => setReportNote(e.target.value)}
+                  placeholder={t.reportPlaceholder}
+                  rows={2}
+                  className="w-full rounded-xl border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <Button variant="destructive" size="sm" className="w-full" onClick={sendReport}>
+                  {t.reportSend}
+                </Button>
+              </div>
+            )}
 
             <div className="mt-4 flex gap-2">
               <a

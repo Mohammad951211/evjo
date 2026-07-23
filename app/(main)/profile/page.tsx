@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { User, LogOut, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { User, LogOut, ShieldCheck, ChevronLeft, ChevronRight, Info, Trash2 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,10 @@ export default function ProfilePage() {
               <span className="text-sm font-semibold">{t.language}</span>
               <LangToggle />
             </div>
+            <div className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3">
+              <span className="text-sm font-semibold">{t.appearance}</span>
+              <ThemeToggle />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -126,6 +131,22 @@ export default function ProfilePage() {
         </Link>
       )}
 
+      <Link href="/about" className="mt-4 block">
+        <Card className="transition-colors hover:border-primary/40">
+          <CardContent className="flex items-center gap-3 py-3.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
+              <Info className="h-4 w-4" />
+            </span>
+            <span className="flex-1 text-sm font-bold">{t.aboutTitle}</span>
+            {dir === "rtl" ? (
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+          </CardContent>
+        </Card>
+      </Link>
+
       <Button
         variant="outline"
         className="mt-4 w-full text-destructive hover:bg-destructive/5"
@@ -134,6 +155,18 @@ export default function ProfilePage() {
         <LogOut />
         {t.signOut}
       </Button>
+
+      <button
+        onClick={async () => {
+          if (!window.confirm(t.deleteAccountWarn)) return;
+          const res = await fetch("/api/profile", { method: "DELETE" });
+          if (res.ok) signOut({ callbackUrl: "/signup" });
+        }}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-muted-foreground transition-colors hover:text-destructive"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+        {t.deleteAccount}
+      </button>
     </div>
   );
 }

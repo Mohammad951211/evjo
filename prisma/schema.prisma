@@ -49,6 +49,8 @@ model User {
   createdAt     DateTime          @default(now())
   vehicles      UserVehicle[]
   sessions      ChargingSession[]
+  favorites     Favorite[]
+  reports       StationReport[]
 }
 
 /// Seeded vehicle catalog — one row per battery variant.
@@ -120,8 +122,38 @@ model Station {
   updatedAt    DateTime          @updatedAt
   createdAt    DateTime          @default(now())
   sessions     ChargingSession[]
+  favorites    Favorite[]
+  reports      StationReport[]
 
   @@index([latitude, longitude])
+}
+
+/// A user's starred station.
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stationId String
+  station   Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, stationId])
+  @@index([stationId])
+}
+
+/// "This station didn't work" community reports, reviewed by the admin.
+model StationReport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stationId String
+  station   Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  note      String?
+  status    String   @default("OPEN") // OPEN | RESOLVED
+  createdAt DateTime @default(now())
+
+  @@index([stationId])
+  @@index([status])
 }
 
 /// One-time codes for phone verification. Codes are stored hashed.

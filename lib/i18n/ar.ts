@@ -254,6 +254,45 @@ export const ar = {
   removePhoto: "إزالة الصورة",
   photoError: "تعذّرت معالجة الصورة — جرّب صورة أخرى",
 
+  // Map extras
+  locateMe: "موقعي",
+  rangeCircle: "دائرة المدى",
+  rangeAt: (soc: number, km: number) => `بشحن ${soc}% بتوصل تقريباً ${km} كم`,
+  rangeNeedsVehicle: "أضف سيارة أولاً لحساب المدى",
+  shareStation: "مشاركة",
+  copyCoords: "نسخ الإحداثيات",
+  copied: "تم النسخ ✓",
+  favOnly: "المفضلة فقط",
+  favAdd: "أضف للمفضلة",
+  favRemove: "أزل من المفضلة",
+
+  // Reports
+  reportIssue: "الإبلاغ عن مشكلة",
+  reportPlaceholder: "شو المشكلة؟ (اختياري) — مثلاً: المحطة ما اشتغلت معي",
+  reportSend: "إرسال البلاغ",
+  reportSent: "وصل بلاغك — شكراً لمساعدتك بتحسين البيانات",
+  adminTabReports: "البلاغات",
+  reportOpen: "مفتوح",
+  reportResolved: "تمت المعالجة",
+  resolveBtn: "معالجة",
+  reopenBtn: "إعادة فتح",
+  noReports: "لا توجد بلاغات",
+
+  // Appearance / account
+  appearance: "المظهر",
+  themeDark: "داكن",
+  themeLight: "فاتح",
+  renameVehicle: "تعديل الكنية",
+  renamePrompt: "اكتب كنية للسيارة (مثلاً: سيارتي البيضاء)",
+  deleteAccount: "حذف الحساب نهائياً",
+  deleteAccountWarn:
+    "رح ينحذف حسابك وكل بياناتك نهائياً (السيارات، الجلسات، المفضلة). ما في رجعة. متأكد؟",
+  aboutTitle: "حول التطبيق",
+  aboutVersion: "الإصدار",
+  aboutDataSources: "مصادر بيانات المحطات",
+  aboutDataNote: "OpenChargeMap و OpenStreetMap (© المساهمون) — مع إضافات يدوية من فريق التطبيق",
+  aboutTariffNote: "التعرفة حسب فترات الاستهلاك المعلنة في الأردن — راجع مزوّدك للتأكد",
+
   // Profile
   profileTitle: "الملف الشخصي",
   language: "اللغة",
