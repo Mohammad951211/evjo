@@ -36,8 +36,13 @@ export const VEHICLE_ROWS: Row[] = [
   // ── Tesla (EU-spec, CCS2) ────────────────────────────────────────
   ["Tesla", "Model 3", "RWD 60 kWh LFP", 2021, null, 60, 57.5, 513, 13.2, 11, 170, "CCS2", 1765, "RWD"],
   ["Tesla", "Model 3", "Long Range AWD", 2021, null, 78.1, 75, 629, 14.0, 11, 250, "CCS2", 1828, "AWD"],
-  ["Tesla", "Model Y", "RWD 60 kWh LFP", 2022, null, 60, 57.5, 455, 15.2, 11, 170, "CCS2", 1909, "RWD"],
-  ["Tesla", "Model Y", "Long Range AWD", 2022, null, 78.1, 75, 533, 15.7, 11, 250, "CCS2", 1979, "AWD"],
+  ["Tesla", "Model Y", "RWD 60 kWh LFP", 2022, 2025, 60, 57.5, 455, 15.2, 11, 170, "CCS2", 1909, "RWD"],
+  ["Tesla", "Model Y", "Long Range AWD", 2022, 2025, 78.1, 75, 533, 15.7, 11, 250, "CCS2", 1979, "AWD"],
+  // Juniper facelift (2025+) — LFP on RWD, NMC on Long Range
+  ["Tesla", "Model Y", "RWD (Juniper)", 2025, null, 62.5, 60, 500, 13.9, 11, 175, "CCS2", 1921, "RWD"],
+  ["Tesla", "Model Y", "Long Range RWD (Juniper)", 2025, null, 81.3, 78.4, 622, 14.4, 11, 250, "CCS2", 1968, "RWD"],
+  ["Tesla", "Model Y", "Long Range AWD (Juniper)", 2025, null, 81.3, 78.4, 568, 15.9, 11, 250, "CCS2", 1997, "AWD"],
+  ["Tesla", "Model Y", "Performance (Juniper)", 2025, null, 81.3, 78.4, 520, 17.1, 11, 250, "CCS2", 2072, "AWD"],
   ["Tesla", "Model S", "Dual Motor", 2021, null, 100, 95, 634, 17.5, 11, 250, "CCS2", 2069, "AWD"],
   ["Tesla", "Model X", "Dual Motor", 2021, null, 100, 95, 576, 19.5, 11, 250, "CCS2", 2352, "AWD"],
 
