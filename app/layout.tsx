@@ -12,7 +12,7 @@ const plex = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "EV.JO — Always Connected, Always Charged",
+  title: "اشحن Eshhan.jo — دايماً موصول، دايماً مشحون",
   description:
     "مساعد السيارات الكهربائية في الأردن — محطات شحن سريع، مخطط رحلات، وحاسبة تكلفة الشحن حسب فترات التعرفة.",
   manifest: "/manifest.webmanifest",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "EV.JO",
+    title: "اشحن",
     statusBarStyle: "default",
   },
 };

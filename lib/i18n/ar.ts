@@ -1,6 +1,6 @@
 export const ar = {
   // Brand
-  appName: "EV.JO",
+  appName: "اشحن",
   tagline: "دايماً موصول، دايماً مشحون",
   developedBy: "تطوير م. محمد الغويري",
 
@@ -215,7 +215,7 @@ export const ar = {
   notificationsTitle: "التنبيهات",
   notifOffpeakSoon: "فترة خارج الذروة تبدأ الساعة 05:00 — أرخص وقت للشحن المنزلي.",
   notifPeakNow: "أنت الآن في فترة الذروة — أجّل الشحن إن أمكن لتوفير التكلفة.",
-  notifWelcome: "أهلاً بك في EV.JO! أضف سيارتك لتحصل على توصيات مخصصة.",
+  notifWelcome: "أهلاً بك في اشحن! أضف سيارتك لتحصل على توصيات مخصصة.",
   noNotifications: "لا توجد تنبيهات جديدة",
 
   // Admin

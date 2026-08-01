@@ -1,7 +1,7 @@
 import type { Dict } from "./ar";
 
 export const en: Dict = {
-  appName: "EV.JO",
+  appName: "Eshhan",
   tagline: "Always Connected, Always Charged",
   developedBy: "Developed by Eng. Mohammad Alghweri",
 
@@ -66,7 +66,7 @@ export const en: Dict = {
   obProfileTitle: "Confirm your details",
   obProfileBody: "One last step — your name and city.",
   city: "City",
-  goHome: "Start using EV.JO",
+  goHome: "Start using Eshhan",
 
   greeting: (name: string) => (name ? `Hello, ${name}` : "Welcome"),
   nearYou: "Stations near you",
@@ -204,7 +204,7 @@ export const en: Dict = {
   notificationsTitle: "Alerts",
   notifOffpeakSoon: "Off-peak starts at 05:00 — the cheapest window for home charging.",
   notifPeakNow: "You're in the peak period now — defer charging if you can to save cost.",
-  notifWelcome: "Welcome to EV.JO! Add your vehicle to get personalised recommendations.",
+  notifWelcome: "Welcome to Eshhan! Add your vehicle to get personalised recommendations.",
   noNotifications: "No new alerts",
 
   adminPanel: "Admin panel",

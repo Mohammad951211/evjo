@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     data: { phone, codeHash, expiresAt: new Date(Date.now() + CODE_TTL_MS) },
   });
 
-  await sendSms(phone, `EV.JO — رمز التحقق: ${code}`);
+  await sendSms(phone, `اشحن — رمز التحقق: ${code}`);
 
   // Without a configured SMS gateway (dev/staging), surface the code so
   // the flow remains testable end-to-end.
