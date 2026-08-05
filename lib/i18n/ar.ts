@@ -235,6 +235,12 @@ export const ar = {
   adminNoUsers: "لا يوجد مستخدمون بعد",
   adminTabUsers: "المستخدمون",
   adminTabStations: "المحطات",
+  resetPassword: "إعادة تعيين كلمة المرور",
+  resetPasswordConfirm: (name: string) =>
+    `إعادة تعيين كلمة مرور «${name}»؟ رح تُنشأ كلمة مرور مؤقتة تعطيها للمستخدم.`,
+  tempPasswordIs: "كلمة المرور المؤقتة",
+  tempPasswordHint: "أعطِها للمستخدم — ويغيّرها من ملفه الشخصي بعد الدخول.",
+  copyTemp: "نسخ",
   addStationTitle: "إضافة محطة",
   stationNameLabel: "اسم المحطة",
   locationLabel: "الموقع",
@@ -279,6 +285,12 @@ export const ar = {
   noReports: "لا توجد بلاغات",
 
   // Appearance / account
+  changePassword: "تغيير كلمة المرور",
+  currentPassword: "كلمة المرور الحالية",
+  newPassword: "كلمة المرور الجديدة",
+  passwordChanged: "تم تغيير كلمة المرور ✓",
+  wrongCurrentPassword: "كلمة المرور الحالية غير صحيحة",
+  passwordTooShort: "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل",
   appearance: "المظهر",
   themeDark: "داكن",
   themeLight: "فاتح",

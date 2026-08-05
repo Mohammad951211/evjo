@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { User, LogOut, ShieldCheck, ChevronLeft, ChevronRight, Info, Trash2 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ChangePassword } from "@/components/change-password";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +110,8 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <ChangePassword />
 
       {p.isAdmin && (
         <Link href="/admin" className="mt-4 block">

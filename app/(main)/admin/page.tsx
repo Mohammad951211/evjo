@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShieldCheck, Users, Car, Zap, CheckCircle2, Clock } from "lucide-react";
+import { ShieldCheck, Users, Car, Zap, CheckCircle2, Clock, KeyRound, Copy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +28,8 @@ export default function AdminPage() {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<"users" | "stations" | "reports">("users");
   const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [resetInfo, setResetInfo] = useState<Record<string, string>>({});
+  const [resetting, setResetting] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
@@ -48,6 +50,17 @@ export default function AdminPage() {
     const c = JO_CITIES.find((x) => x.id === id);
     return c ? (locale === "ar" ? c.nameAr : c.nameEn) : id;
   };
+
+  async function resetPassword(u: AdminUser) {
+    if (!window.confirm(t.resetPasswordConfirm(u.name))) return;
+    setResetting(u.id);
+    const res = await fetch(`/api/admin/users/${u.id}/reset-password`, { method: "POST" });
+    setResetting(null);
+    if (res.ok) {
+      const d = await res.json();
+      setResetInfo((prev) => ({ ...prev, [u.id]: d.tempPassword }));
+    }
+  }
 
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString(locale === "ar" ? "ar-JO" : "en-GB", {
@@ -156,6 +169,35 @@ export default function AdminPage() {
                         </span>
                       </span>
                     </div>
+
+                    {resetInfo[u.id] ? (
+                      <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-accent px-3 py-2">
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold uppercase tracking-wide text-primary">
+                            {t.tempPasswordIs}
+                          </span>
+                          <span className="num text-sm font-bold" dir="ltr">{resetInfo[u.id]}</span>
+                        </span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(resetInfo[u.id])}
+                          className="flex shrink-0 items-center gap-1 rounded-md border bg-card px-2 py-1 text-[11px] font-bold text-primary"
+                        >
+                          <Copy className="h-3 w-3" /> {t.copyTemp}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => resetPassword(u)}
+                        disabled={resetting === u.id}
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[11px] font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        {resetting === u.id ? t.loading : t.resetPassword}
+                      </button>
+                    )}
+                    {resetInfo[u.id] && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">{t.tempPasswordHint}</p>
+                    )}
                   </CardContent>
                 </Card>
               ))}
