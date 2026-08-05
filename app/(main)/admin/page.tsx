@@ -24,12 +24,22 @@ interface AdminUser {
   sessions: number;
 }
 
+interface ResetRequest {
+  id: string;
+  name: string;
+  phone: string;
+  userId: string | null;
+  createdAt: string;
+}
+
 export default function AdminPage() {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<"users" | "stations" | "reports">("users");
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [resetInfo, setResetInfo] = useState<Record<string, string>>({});
   const [resetting, setResetting] = useState<string | null>(null);
+  const [requests, setRequests] = useState<ResetRequest[]>([]);
+  const [reqTemp, setReqTemp] = useState<Record<string, string>>({});
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
@@ -43,7 +53,23 @@ export default function AdminPage() {
       })
       .then((d) => d && setUsers(d.users ?? []))
       .catch(() => setForbidden(true));
+    fetch("/api/admin/reset-requests")
+      .then((r) => (r.ok ? r.json() : { requests: [] }))
+      .then((d) => setRequests(d.requests ?? []))
+      .catch(() => {});
   }, []);
+
+  async function resolveRequest(req: ResetRequest) {
+    if (req.userId) {
+      const res = await fetch(`/api/admin/users/${req.userId}/reset-password`, { method: "POST" });
+      if (res.ok) {
+        const d = await res.json();
+        setReqTemp((p) => ({ ...p, [req.id]: d.tempPassword }));
+      }
+    }
+    await fetch(`/api/admin/reset-requests/${req.id}`, { method: "PATCH" });
+    if (!req.userId) setRequests((rs) => rs.filter((r) => r.id !== req.id));
+  }
 
   const cityName = (id: string | null) => {
     if (!id) return "—";
@@ -126,6 +152,56 @@ export default function AdminPage() {
               <p className="text-xs text-primary-foreground/80">{t.totalUsers(users.length)}</p>
             </div>
           </div>
+
+          {/* Pending password-reset requests */}
+          {requests.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-3 dark:bg-amber-950/40">
+              <p className="mb-2 flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                <KeyRound className="h-4 w-4" />
+                {t.resetRequestsTitle} ({requests.length})
+              </p>
+              <div className="space-y-2">
+                {requests.map((req) => (
+                  <div key={req.id} className="rounded-xl bg-card p-3 card-shadow">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold">{req.name}</p>
+                        <p className="num text-xs text-muted-foreground" dir="ltr">{req.phone}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {fmt(req.createdAt)}
+                          {!req.userId && <span className="text-destructive"> · {t.requestNoAccount}</span>}
+                        </p>
+                      </div>
+                      {!reqTemp[req.id] && (
+                        <button
+                          onClick={() => resolveRequest(req)}
+                          className="shrink-0 rounded-lg border border-primary/40 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-accent"
+                        >
+                          {req.userId ? t.resetPassword : t.markDone}
+                        </button>
+                      )}
+                    </div>
+                    {reqTemp[req.id] && (
+                      <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-accent px-3 py-2">
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold uppercase tracking-wide text-primary">
+                            {t.tempPasswordIs}
+                          </span>
+                          <span className="num text-sm font-bold" dir="ltr">{reqTemp[req.id]}</span>
+                        </span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(reqTemp[req.id])}
+                          className="flex shrink-0 items-center gap-1 rounded-md border bg-card px-2 py-1 text-[11px] font-bold text-primary"
+                        >
+                          <Copy className="h-3 w-3" /> {t.copyTemp}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {users.length === 0 ? (
             <p className="mt-4 rounded-2xl border border-dashed py-14 text-center text-sm text-muted-foreground">

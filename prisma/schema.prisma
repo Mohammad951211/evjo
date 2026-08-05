@@ -141,6 +141,18 @@ model Favorite {
   @@index([stationId])
 }
 
+/// A "forgot my password" request from the login screen, handled by the admin.
+model PasswordResetRequest {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  userId    String? // resolved to a real account at submit time, if one matches
+  status    String   @default("OPEN") // OPEN | DONE
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
 /// "This station didn't work" community reports, reviewed by the admin.
 model StationReport {
   id        String   @id @default(cuid())
