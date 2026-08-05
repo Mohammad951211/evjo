@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { User, LogOut, ShieldCheck, ChevronLeft, ChevronRight, Info, Trash2 } from "lucide-react";
+import { User, LogOut, ShieldCheck, ChevronLeft, ChevronRight, Info, Trash2, BookOpen } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ChangePassword } from "@/components/change-password";
 import { Card, CardContent } from "@/components/ui/card";
@@ -133,6 +133,30 @@ export default function ProfilePage() {
           </Card>
         </Link>
       )}
+
+      <a
+        href="/Eshhan-User-Guide.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 block"
+      >
+        <Card className="transition-colors hover:border-primary/40">
+          <CardContent className="flex items-center gap-3 py-3.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
+              <BookOpen className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold">{t.userGuide}</span>
+              <span className="block text-[11px] text-muted-foreground">{t.userGuideSubtitle}</span>
+            </span>
+            {dir === "rtl" ? (
+              <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </CardContent>
+        </Card>
+      </a>
 
       <Link href="/about" className="mt-4 block">
         <Card className="transition-colors hover:border-primary/40">

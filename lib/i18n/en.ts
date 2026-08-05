@@ -295,6 +295,8 @@ export const en: Dict = {
   deleteAccount: "Delete account permanently",
   deleteAccountWarn:
     "Your account and all its data (vehicles, sessions, favorites) will be permanently deleted. This cannot be undone. Are you sure?",
+  userGuide: "User guide",
+  userGuideSubtitle: "How to use the app (PDF)",
   aboutTitle: "About",
   aboutVersion: "Version",
   aboutDataSources: "Station data sources",

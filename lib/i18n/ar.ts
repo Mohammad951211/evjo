@@ -310,6 +310,8 @@ export const ar = {
   deleteAccount: "حذف الحساب نهائياً",
   deleteAccountWarn:
     "رح ينحذف حسابك وكل بياناتك نهائياً (السيارات، الجلسات، المفضلة). ما في رجعة. متأكد؟",
+  userGuide: "دليل المستخدم",
+  userGuideSubtitle: "كيفية استخدام التطبيق (PDF)",
   aboutTitle: "حول التطبيق",
   aboutVersion: "الإصدار",
   aboutDataSources: "مصادر بيانات المحطات",
