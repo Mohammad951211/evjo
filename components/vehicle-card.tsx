@@ -4,6 +4,7 @@ import { Car, BatteryFull, Gauge, PlugZap, Zap, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
+import { photoSrc } from "@/lib/image";
 import type { GarageVehicle } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -29,12 +30,18 @@ export function VehicleCard({
 }) {
   const { t } = useI18n();
   const s = v.spec;
+  const photo = photoSrc(s.image);
 
   return (
     <Card className={cn("overflow-hidden", v.isDefault && "border-primary/50 ring-1 ring-primary/30")}>
-      {/* stylised vehicle banner */}
-      <div className="relative flex h-28 items-center justify-center bg-gradient-to-br from-primary/10 via-accent to-secondary">
-        <Car className="h-14 w-14 text-primary/70" strokeWidth={1.4} />
+      {/* vehicle banner — real photo when available, else a stylised icon */}
+      <div className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-accent to-secondary">
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt={s.name} className="h-full w-full object-cover" />
+        ) : (
+          <Car className="h-14 w-14 text-primary/70" strokeWidth={1.4} />
+        )}
         {v.isDefault && (
           <Badge className="absolute start-3 top-3 bg-primary text-primary-foreground">
             {t.defaultVehicle}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminStations } from "@/components/admin-stations";
 import { AdminReports } from "@/components/admin-reports";
+import { AdminVehicles } from "@/components/admin-vehicles";
 import { useI18n } from "@/lib/i18n";
 import { JO_CITIES } from "@/lib/geo";
 
@@ -34,7 +35,7 @@ interface ResetRequest {
 
 export default function AdminPage() {
   const { t, locale } = useI18n();
-  const [tab, setTab] = useState<"users" | "stations" | "reports">("users");
+  const [tab, setTab] = useState<"users" | "vehicles" | "stations" | "reports">("users");
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [resetInfo, setResetInfo] = useState<Record<string, string>>({});
   const [resetting, setResetting] = useState<string | null>(null);
@@ -115,21 +116,29 @@ export default function AdminPage() {
       </h1>
 
       {/* Tabs */}
-      <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-muted p-1">
-        {(["users", "stations", "reports"] as const).map((tb) => (
+      <div className="mt-3 grid grid-cols-4 gap-1.5 rounded-xl bg-muted p-1">
+        {(["users", "vehicles", "stations", "reports"] as const).map((tb) => (
           <button
             key={tb}
             onClick={() => setTab(tb)}
-            className={`rounded-lg py-2 text-sm font-bold transition-colors ${
+            className={`rounded-lg py-2 text-xs font-bold transition-colors sm:text-sm ${
               tab === tb ? "bg-card text-primary card-shadow" : "text-muted-foreground"
             }`}
           >
-            {tb === "users" ? t.adminTabUsers : tb === "stations" ? t.adminTabStations : t.adminTabReports}
+            {tb === "users"
+              ? t.adminTabUsers
+              : tb === "vehicles"
+                ? t.adminTabVehicles
+                : tb === "stations"
+                  ? t.adminTabStations
+                  : t.adminTabReports}
           </button>
         ))}
       </div>
 
-      {tab === "stations" ? (
+      {tab === "vehicles" ? (
+        <AdminVehicles />
+      ) : tab === "stations" ? (
         <div className="mt-4">
           <AdminStations />
         </div>

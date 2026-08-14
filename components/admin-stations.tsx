@@ -9,30 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
+import { compressImage } from "@/lib/image";
 import type { StationDto } from "@/types";
-
-/** Downscale + JPEG-compress a photo client-side so uploads stay tiny. */
-async function compressImage(file: File): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(fr.result as string);
-    fr.onerror = () => reject(fr.error);
-    fr.readAsDataURL(file);
-  });
-  const img = document.createElement("img");
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("bad image"));
-    img.src = dataUrl;
-  });
-  const MAX = 1280;
-  const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(img.width * scale);
-  canvas.height = Math.round(img.height * scale);
-  canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.72);
-}
 
 /** Admin: add missing stations by hand + manage the manually added list. */
 export function AdminStations() {
