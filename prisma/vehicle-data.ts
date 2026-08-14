@@ -165,8 +165,19 @@ export const VEHICLE_ROWS: Row[] = [
   ["Changan", "Deepal SL03", "58.1 kWh EV", 2022, null, 58.1, 56, 430, 13.8, 11, 92, "GBT_DC", 1840, "RWD"],
   ["Changan", "UNI-V iDD", "18.4 kWh PHEV", 2023, null, 18.4, 18.4, 90, 17.5, 6.6, 0, "TYPE2", 1750, "FWD PHEV"],
   ["Changan", "Lumin", "28 kWh", 2022, null, 28, 27, 210, 11.5, 3.5, 30, "GBT_DC", 840, "RWD"],
-  ["Changan", "E-Star", "32 kWh", 2020, null, 32, 30.7, 240, 12.0, 6.6, 45, "GBT_DC", 1060, "FWD"],
-  ["Changan", "Eado EV460", "57 kWh", 2019, null, 57, 54, 380, 14.5, 6.6, 70, "GBT_DC", 1660, "FWD"],
+  ["Changan", "E-Star", "30.7 kWh", 2020, null, 30.7, 29.4, 235, 12.5, 6.6, 40, "GBT_DC", 1060, "FWD"],
+  ["Changan", "E-Star", "32.2 kWh", 2020, null, 32.2, 30.9, 245, 12.5, 6.6, 40, "GBT_DC", 1075, "FWD"],
+  ["Changan", "Eado EV", "52.7 kWh", 2019, null, 52.7, 50.5, 350, 14.5, 6.6, 70, "GBT_DC", 1620, "FWD"],
+  ["Changan", "Eado EV", "58.1 kWh", 2019, null, 58.1, 55.7, 385, 14.5, 6.6, 70, "GBT_DC", 1660, "FWD"],
+
+  // ── Neta / Hozon (CN import, GB/T) ───────────────────────────────
+  ["Neta", "V", "38.5 kWh", 2020, null, 38.5, 36.6, 270, 13.5, 6.6, 48, "GBT_DC", 1130, "FWD"],
+  ["Neta", "Aya", "40.7 kWh", 2023, null, 40.7, 38.7, 285, 13.5, 6.6, 48, "GBT_DC", 1150, "FWD"],
+  ["Neta", "U Pro 400", "54.3 kWh", 2021, null, 54.3, 51.5, 320, 16.0, 6.6, 60, "GBT_DC", 1600, "FWD"],
+  ["Neta", "U Pro 500", "70.4 kWh", 2021, null, 70.4, 67, 400, 16.5, 6.6, 80, "GBT_DC", 1650, "FWD"],
+  ["Neta", "X", "52 kWh", 2024, null, 52, 49.5, 320, 15.5, 6.6, 80, "GBT_DC", 1560, "FWD"],
+  ["Neta", "X", "62 kWh", 2024, null, 62, 59, 375, 15.8, 11, 80, "GBT_DC", 1610, "FWD"],
+  ["Neta", "GT", "78.4 kWh", 2023, null, 78.4, 74.5, 465, 16.0, 11, 120, "GBT_DC", 1810, "RWD"],
 
   // ── Jetour ───────────────────────────────────────────────────────
   ["Jetour", "Dashing i-DM", "19.27 kWh PHEV", 2022, null, 19.27, 19.27, 100, 17.5, 6.6, 0, "TYPE2", 1795, "FWD PHEV"],
