@@ -280,6 +280,7 @@ export const en: Dict = {
   vehiclePhotosHint: "Upload a real photo for a model — it shows on every variant and in every user's garage. Use only images you have the right to use.",
   variantsCount: (n: number) => `${n} ${n === 1 ? "variant" : "variants"}`,
   changePhoto: "Change photo",
+  addCarPhoto: "Add photo",
   photoSaved: "Photo saved ✓",
   noResults: "No matches",
   reportOpen: "Open",

@@ -88,6 +88,7 @@ model UserVehicle {
   nickname      String?
   year          Int?
   isDefault     Boolean           @default(false)
+  image         String? // owner-uploaded personal photo (compressed JPEG data-URL)
   customName    String?
   customBattery Float?
   customUsable  Float?

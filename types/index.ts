@@ -24,6 +24,7 @@ export interface GarageVehicle {
   nickname: string | null;
   year: number | null;
   isDefault: boolean;
+  image: string | null; // owner-uploaded personal photo
   spec: {
     name: string;
     make: string;

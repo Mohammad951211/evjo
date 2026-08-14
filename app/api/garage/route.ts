@@ -12,6 +12,7 @@ function toDto(uv: any): GarageVehicle {
     nickname: uv.nickname,
     year: uv.year,
     isDefault: uv.isDefault,
+    image: uv.image ?? null,
     spec: v
       ? {
           name: `${v.make} ${v.model} ${v.variant}`,

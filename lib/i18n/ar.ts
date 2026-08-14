@@ -294,6 +294,7 @@ export const ar = {
   vehiclePhotosHint: "ارفع صورة حقيقية للموديل — بتظهر على كل فئاته وبكراج كل مستخدم. استعمل صور عندك حق استخدامها فقط.",
   variantsCount: (n: number) => (n === 1 ? "فئة واحدة" : n === 2 ? "فئتان" : `${n} فئات`),
   changePhoto: "تغيير الصورة",
+  addCarPhoto: "أضف صورة",
   photoSaved: "انحفظت الصورة ✓",
   noResults: "ما في نتائج",
   reportOpen: "مفتوح",

@@ -19,6 +19,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (typeof body.nickname === "string") {
     await prisma.userVehicle.update({ where: { id: uv.id }, data: { nickname: body.nickname } });
   }
+  if ("image" in body) {
+    let image: string | null = null;
+    if (typeof body.image === "string" && body.image.length > 0) {
+      if (
+        !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(body.image) ||
+        body.image.length > 1_200_000
+      ) {
+        return NextResponse.json({ error: "bad_image" }, { status: 400 });
+      }
+      image = body.image;
+    }
+    await prisma.userVehicle.update({ where: { id: uv.id }, data: { image } });
+  }
   return NextResponse.json({ ok: true });
 }
 

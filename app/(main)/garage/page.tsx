@@ -1,18 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { VehicleCard } from "@/components/vehicle-card";
 import { VehiclePicker } from "@/components/vehicle-picker";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/lib/i18n";
+import { compressImage } from "@/lib/image";
 import type { GarageVehicle } from "@/types";
 
 export default function GaragePage() {
   const { t } = useI18n();
   const [vehicles, setVehicles] = useState<GarageVehicle[] | null>(null);
   const [adding, setAdding] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState<string | null>(null);
+  const pendingId = useRef<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
     fetch("/api/garage")
@@ -21,6 +25,36 @@ export default function GaragePage() {
   }, []);
 
   useEffect(load, [load]);
+
+  async function saveImage(id: string, image: string | null) {
+    setPhotoBusy(id);
+    await fetch(`/api/garage/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image }),
+    });
+    setPhotoBusy(null);
+    load();
+  }
+
+  function pickPhoto(id: string) {
+    pendingId.current = id;
+    fileRef.current?.click();
+  }
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const id = pendingId.current;
+    pendingId.current = null;
+    if (!file || !id) return;
+    try {
+      const image = await compressImage(file);
+      await saveImage(id, image);
+    } catch {
+      setPhotoBusy(null);
+    }
+  }
 
   async function setDefault(id: string) {
     await fetch(`/api/garage/${id}`, {
@@ -76,10 +110,15 @@ export default function GaragePage() {
               onSetDefault={() => setDefault(v.id)}
               onDelete={() => remove(v.id)}
               onRename={() => rename(v)}
+              onPhoto={() => pickPhoto(v.id)}
+              onRemovePhoto={() => saveImage(v.id, null)}
+              photoBusy={photoBusy === v.id}
             />
           ))
         )}
       </div>
+
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickFile} />
 
       {adding && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setAdding(false)}>

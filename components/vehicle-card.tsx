@@ -1,6 +1,6 @@
 "use client";
 
-import { Car, BatteryFull, Gauge, PlugZap, Zap, Pencil } from "lucide-react";
+import { Car, BatteryFull, Gauge, PlugZap, Zap, Pencil, Camera, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
@@ -20,17 +20,24 @@ export function VehicleCard({
   onSetDefault,
   onDelete,
   onRename,
+  onPhoto,
+  onRemovePhoto,
+  photoBusy,
   actions,
 }: {
   v: GarageVehicle;
   onSetDefault?: () => void;
   onDelete?: () => void;
   onRename?: () => void;
+  onPhoto?: () => void;
+  onRemovePhoto?: () => void;
+  photoBusy?: boolean;
   actions?: boolean;
 }) {
   const { t } = useI18n();
   const s = v.spec;
-  const photo = photoSrc(s.image);
+  const userPhoto = photoSrc(v.image);
+  const photo = userPhoto ?? photoSrc(s.image);
 
   return (
     <Card className={cn("overflow-hidden", v.isDefault && "border-primary/50 ring-1 ring-primary/30")}>
@@ -50,6 +57,30 @@ export function VehicleCard({
         <Badge variant="outline" className="absolute end-3 top-3 bg-card/80">
           {CONNECTOR_LABEL[s.connector] ?? s.connector}
         </Badge>
+
+        {onPhoto && (
+          <div className="absolute bottom-2 end-2 flex items-center gap-1.5">
+            {userPhoto && onRemovePhoto && (
+              <button
+                onClick={onRemovePhoto}
+                disabled={photoBusy}
+                aria-label={t.removePhoto}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90 text-destructive shadow-sm backdrop-blur transition-colors hover:bg-card disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={onPhoto}
+              disabled={photoBusy}
+              aria-label={userPhoto ? t.changePhoto : t.addCarPhoto}
+              className="flex h-8 items-center gap-1.5 rounded-full bg-card/90 px-3 text-xs font-bold text-primary shadow-sm backdrop-blur transition-colors hover:bg-card disabled:opacity-50"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              {photoBusy ? t.loading : userPhoto ? t.changePhoto : t.addCarPhoto}
+            </button>
+          </div>
+        )}
       </div>
       <CardContent className="pt-4">
         <div className="flex items-baseline justify-between gap-2">
