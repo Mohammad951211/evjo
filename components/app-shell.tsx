@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Home, MapPin, Car, User, Zap, Bell, Route } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { LangToggle } from "@/components/lang-toggle";
@@ -20,6 +21,16 @@ const DOCK = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useI18n();
+  const [unread, setUnread] = useState(0);
+
+  // refresh the unread badge on every navigation (opening /notifications
+  // marks them read, so the count clears on the next fetch)
+  useEffect(() => {
+    fetch("/api/notifications")
+      .then((r) => (r.ok ? r.json() : { unread: 0 }))
+      .then((d) => setUnread(d.unread ?? 0))
+      .catch(() => {});
+  }, [pathname]);
 
   return (
     <div className="mx-auto min-h-dvh max-w-md">
@@ -33,11 +44,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href="/notifications"
             aria-label={t.navNotifications}
             className={cn(
-              "rounded-full border bg-card p-2 transition-colors",
+              "relative rounded-full border bg-card p-2 transition-colors",
               pathname.startsWith("/notifications") ? "text-primary" : "text-muted-foreground"
             )}
           >
             <Bell className="h-4 w-4" />
+            {unread > 0 && (
+              <span className="num absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
           </Link>
           <Link
             href="/profile"

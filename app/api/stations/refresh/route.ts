@@ -3,6 +3,7 @@ import { refreshStationsFromOcm } from "@/lib/ocm";
 import { refreshStationsFromOsm } from "@/lib/osm";
 import { currentUserId } from "@/lib/session";
 import { revalidateStations } from "@/lib/cache";
+import { snapshotStations, notifyFavoriteStationChanges } from "@/lib/notify";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -28,7 +29,10 @@ async function authorized(req: Request): Promise<boolean> {
  * and OpenStreetMap sources; nearby duplicates are skipped.
  */
 async function runRefresh() {
-  const result: { ocm?: number; osm?: number; errors: string[] } = { errors: [] };
+  const result: { ocm?: number; osm?: number; notified?: number; errors: string[] } = { errors: [] };
+
+  // snapshot status/pricing before the refresh so we can diff for alerts after
+  const before = await snapshotStations();
 
   try {
     result.ocm = await refreshStationsFromOcm();
@@ -45,6 +49,14 @@ async function runRefresh() {
   if (imported === 0 && result.errors.length > 0) {
     return NextResponse.json({ error: result.errors.join(" | ") }, { status: 502 });
   }
+
+  // notify users whose favorited stations went offline or changed price
+  try {
+    result.notified = await notifyFavoriteStationChanges(before);
+  } catch (e) {
+    result.errors.push(`notify: ${e}`);
+  }
+
   // refresh succeeded → bust the cached /api/stations so users get fresh data
   revalidateStations();
   return NextResponse.json({ imported, ...result });

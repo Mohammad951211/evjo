@@ -32,6 +32,11 @@ enum StationStatus {
   OFFLINE
 }
 
+enum NotificationType {
+  STATION_OFFLINE
+  STATION_PRICE
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -51,6 +56,7 @@ model User {
   sessions      ChargingSession[]
   favorites     Favorite[]
   reports       StationReport[]
+  notifications Notification[]
 }
 
 /// Seeded vehicle catalog — one row per battery variant.
@@ -170,6 +176,24 @@ model StationReport {
   @@index([stationId])
   @@index([status])
   @@index([userId])
+}
+
+/// In-app alert for a user — e.g. a favorited station went offline or changed
+/// price. Written by the daily refresh cron, shown on the notifications page.
+model Notification {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          NotificationType
+  stationId     String?
+  stationNameEn String
+  stationNameAr String?
+  oldValue      String? // previous pricing text (STATION_PRICE)
+  newValue      String? // new pricing text (STATION_PRICE)
+  read          Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+
+  @@index([userId, createdAt])
 }
 
 /// One-time codes for phone verification. Codes are stored hashed.

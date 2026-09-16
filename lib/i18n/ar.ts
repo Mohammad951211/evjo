@@ -223,6 +223,8 @@ export const ar = {
   notifPeakNow: "أنت الآن في فترة الذروة — أجّل الشحن إن أمكن لتوفير التكلفة.",
   notifWelcome: "أهلاً بك في اشحن! أضف سيارتك لتحصل على توصيات مخصصة.",
   noNotifications: "لا توجد تنبيهات جديدة",
+  notifStationOffline: (name: string) => `محطة محفوظة لديك — ${name} — أصبحت خارج الخدمة.`,
+  notifStationPrice: (name: string) => `تغيّر سعر الشحن في محطة محفوظة لديك — ${name}.`,
 
   // Admin
   adminPanel: "لوحة المشرف",

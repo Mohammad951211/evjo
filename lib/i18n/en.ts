@@ -212,6 +212,8 @@ export const en: Dict = {
   notifPeakNow: "You're in the peak period now — defer charging if you can to save cost.",
   notifWelcome: "Welcome to Eshhan! Add your vehicle to get personalised recommendations.",
   noNotifications: "No new alerts",
+  notifStationOffline: (name: string) => `A station you saved — ${name} — is now offline.`,
+  notifStationPrice: (name: string) => `The charging price changed at a station you saved — ${name}.`,
 
   adminPanel: "Admin panel",
   adminTitle: "Registered users",
