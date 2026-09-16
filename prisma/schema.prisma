@@ -99,6 +99,7 @@ model UserVehicle {
   sessions      ChargingSession[]
 
   @@index([userId])
+  @@index([vehicleId])
 }
 
 /// Cached OpenChargeMap fast-charging stations (>= 50 kW DC only).
@@ -152,6 +153,7 @@ model PasswordResetRequest {
   createdAt DateTime @default(now())
 
   @@index([status])
+  @@index([userId])
 }
 
 /// "This station didn't work" community reports, reviewed by the admin.
@@ -167,6 +169,7 @@ model StationReport {
 
   @@index([stationId])
   @@index([status])
+  @@index([userId])
 }
 
 /// One-time codes for phone verification. Codes are stored hashed.
@@ -198,4 +201,6 @@ model ChargingSession {
   createdAt     DateTime        @default(now())
 
   @@index([userId, startedAt])
+  @@index([userVehicleId])
+  @@index([stationId])
 }
