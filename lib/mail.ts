@@ -3,6 +3,8 @@
  * otherwise logs the message so flows stay testable without a provider.
  * Resend free tier sends from onboarding@resend.dev with no domain setup.
  */
+import { fetchWithTimeout } from "@/lib/http";
+
 export async function sendAdminEmail(subject: string, html: string): Promise<{ sent: boolean }> {
   const key = process.env.RESEND_API_KEY;
   const to = process.env.ADMIN_EMAIL;
@@ -11,7 +13,7 @@ export async function sendAdminEmail(subject: string, html: string): Promise<{ s
     return { sent: false };
   }
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetchWithTimeout("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -20,7 +22,7 @@ export async function sendAdminEmail(subject: string, html: string): Promise<{ s
         subject,
         html,
       }),
-    });
+    }, 10_000);
     if (!res.ok) {
       console.error("Resend send failed:", res.status, await res.text());
       return { sent: false };

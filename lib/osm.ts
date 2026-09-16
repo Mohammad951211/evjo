@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { haversineKm } from "@/lib/geo";
+import { fetchWithTimeout } from "@/lib/http";
 
 /**
  * Imports charging stations mapped in OpenStreetMap for Jordan via the
@@ -63,7 +64,7 @@ export async function refreshStationsFromOsm(): Promise<number> {
   let lastStatus = 0;
   for (const url of OVERPASS_URLS) {
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -71,7 +72,7 @@ export async function refreshStationsFromOsm(): Promise<number> {
         },
         body: new URLSearchParams({ data: QUERY }),
         cache: "no-store",
-      });
+      }, 10_000);
       if (res.ok) {
         json = (await res.json()) as { elements: OsmElement[] };
         break;

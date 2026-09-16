@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "@/lib/http";
+
 /**
  * SMS driver. Uses Twilio when TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN /
  * TWILIO_FROM are configured; otherwise logs the message so the OTP flow
@@ -12,22 +14,28 @@ export async function sendSms(
   const from = process.env.TWILIO_FROM;
 
   if (sid && token && from) {
-    const res = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Basic " + Buffer.from(`${sid}:${token}`).toString("base64"),
-          "Content-Type": "application/x-www-form-urlencoded",
+    try {
+      const res = await fetchWithTimeout(
+        `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Basic " + Buffer.from(`${sid}:${token}`).toString("base64"),
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ To: to, From: from, Body: body }),
         },
-        body: new URLSearchParams({ To: to, From: from, Body: body }),
+        10_000,
+      );
+      if (!res.ok) {
+        console.error("Twilio send failed:", res.status, await res.text());
+        return { delivered: false };
       }
-    );
-    if (!res.ok) {
-      console.error("Twilio send failed:", res.status, await res.text());
+      return { delivered: true };
+    } catch (e) {
+      console.error("Twilio error:", e);
       return { delivered: false };
     }
-    return { delivered: true };
   }
 
   console.log(`[SMS:dev] to=${to} body="${body}"`);

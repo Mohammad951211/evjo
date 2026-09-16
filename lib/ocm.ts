@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { StationStatus } from "@prisma/client";
+import { fetchWithTimeout } from "@/lib/http";
 
 /** OCM connection type ids we can classify. */
 const CONNECTION_IDS: Record<number, string> = {
@@ -58,10 +59,10 @@ export async function refreshStationsFromOcm(): Promise<number> {
   url.searchParams.set("maxresults", "500");
   if (key) url.searchParams.set("key", key);
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchWithTimeout(url.toString(), {
     headers: { "User-Agent": "EVJO/1.0" },
     cache: "no-store",
-  });
+  }, 10_000);
   if (!res.ok) throw new Error(`OpenChargeMap responded ${res.status}`);
   const pois = (await res.json()) as OcmPoi[];
 
