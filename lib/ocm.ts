@@ -65,7 +65,7 @@ export async function refreshStationsFromOcm(): Promise<number> {
   if (!res.ok) throw new Error(`OpenChargeMap responded ${res.status}`);
   const pois = (await res.json()) as OcmPoi[];
 
-  let imported = 0;
+  const ops: ReturnType<typeof prisma.station.upsert>[] = [];
   for (const poi of pois) {
     const lat = poi.AddressInfo?.Latitude;
     const lng = poi.AddressInfo?.Longitude;
@@ -106,12 +106,23 @@ export async function refreshStationsFromOcm(): Promise<number> {
       source: "OCM",
     };
 
-    await prisma.station.upsert({
-      where: { ocmId: poi.ID },
-      create: { ocmId: poi.ID, ...data },
-      update: data,
-    });
-    imported++;
+    ops.push(
+      prisma.station.upsert({
+        where: { ocmId: poi.ID },
+        create: { ocmId: poi.ID, ...data },
+        update: data,
+      })
+    );
+  }
+
+  // Write in batched transactions instead of hundreds of sequential round
+  // trips — one network round trip per chunk rather than one per station.
+  const CHUNK = 50;
+  let imported = 0;
+  for (let i = 0; i < ops.length; i += CHUNK) {
+    const batch = ops.slice(i, i + CHUNK);
+    await prisma.$transaction(batch);
+    imported += batch.length;
   }
   return imported;
 }
