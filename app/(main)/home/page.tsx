@@ -10,6 +10,7 @@ import { TariffCard } from "@/components/tariff-card";
 import { LiveClock } from "@/components/live-clock";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAppStore, DEFAULT_CENTER } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { haversineKm, roadKm, driveMinutes } from "@/lib/geo";
@@ -21,9 +22,10 @@ export default function HomePage() {
   const { t, locale, dir } = useI18n();
   const location = useAppStore((s) => s.location);
   const setLocation = useAppStore((s) => s.setLocation);
-  const [stations, setStations] = useState<StationDto[]>([]);
-  const [garage, setGarage] = useState<GarageVehicle[]>([]);
+  const [stations, setStations] = useState<StationDto[] | null>(null);
+  const [garage, setGarage] = useState<GarageVehicle[] | null>(null);
   const [userName, setUserName] = useState("");
+  const loading = stations === null;
 
   useEffect(() => {
     if (!location && typeof navigator !== "undefined" && navigator.geolocation) {
@@ -42,11 +44,11 @@ export default function HomePage() {
   }, []);
 
   const origin = location ?? DEFAULT_CENTER;
-  const defaultVehicle = garage.find((v) => v.isDefault) ?? garage[0];
+  const defaultVehicle = (garage ?? []).find((v) => v.isDefault) ?? (garage ?? [])[0];
 
   const enriched = useMemo(
     () =>
-      stations
+      (stations ?? [])
         .map((s) => {
           const d = roadKm(haversineKm(origin.lat, origin.lng, s.latitude, s.longitude));
           return { ...s, distanceKm: d, driveMin: driveMinutes(d) };
@@ -107,7 +109,13 @@ export default function HomePage() {
                 <ArrowUpRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
               </Link>
             </div>
-            {enriched.length === 0 ? (
+            {loading ? (
+              <div className="grid gap-3">
+                <Skeleton className="h-[92px] w-full rounded-2xl" />
+                <Skeleton className="h-[92px] w-full rounded-2xl" />
+                <Skeleton className="h-[92px] w-full rounded-2xl" />
+              </div>
+            ) : enriched.length === 0 ? (
               <p className="rounded-2xl border border-dashed py-10 text-center text-sm text-muted-foreground">
                 {t.noStationsYet}
               </p>
@@ -155,7 +163,13 @@ export default function HomePage() {
             </div>
             <div className="p-5">
               <p className="text-xs text-muted-foreground">{t.fastestOptionBody}</p>
-              {recommended ? (
+              {loading ? (
+                <div className="mt-3 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="mt-4 h-10 w-full rounded-xl" />
+                </div>
+              ) : recommended ? (
                 <>
                   <p className="mt-3 text-sm font-bold">{name(recommended)}</p>
                   <p className="num mt-1 text-xs text-muted-foreground">
