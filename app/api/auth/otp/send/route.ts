@@ -3,12 +3,19 @@ import { createHash, randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { normalizeJordanPhone } from "@/lib/phone";
 import { sendSms, smsConfigured } from "@/lib/sms";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const CODE_TTL_MS = 5 * 60_000;
 const RESEND_COOLDOWN_MS = 60_000;
 const MAX_PER_HOUR = 5;
 
 export async function POST(req: Request) {
+  // per-IP throttle (protects Twilio spend + blocks enumeration bursts)
+  const limited = rateLimit(`otp-send:${clientIp(req)}`, 5, 10 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json({ error: "rate_limited", retryIn: limited.retryAfter }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   const phone = normalizeJordanPhone(String(body?.phone ?? ""));
   if (!phone) {
@@ -52,10 +59,12 @@ export async function POST(req: Request) {
 
   await sendSms(phone, `اشحن — رمز التحقق: ${code}`);
 
-  // Without a configured SMS gateway (dev/staging), surface the code so
-  // the flow remains testable end-to-end.
+  // Without a configured SMS gateway, surface the code so the flow stays
+  // testable end-to-end — but ONLY outside production, so a misconfigured
+  // prod (OTP required with no gateway) can never leak codes in the response.
+  const exposeDevCode = !smsConfigured() && process.env.NODE_ENV !== "production";
   return NextResponse.json({
     sent: true,
-    ...(smsConfigured() ? {} : { devCode: code }),
+    ...(exposeDevCode ? { devCode: code } : {}),
   });
 }

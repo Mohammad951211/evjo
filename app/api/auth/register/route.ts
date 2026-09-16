@@ -3,8 +3,15 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { normalizeJordanPhone } from "@/lib/phone";
 import { otpRequired } from "@/lib/sms";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  // per-IP throttle to block mass/automated account creation
+  const limited = rateLimit(`register:${clientIp(req)}`, 5, 60 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json({ error: "rate_limited", retryIn: limited.retryAfter }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   if (!body?.name || !body?.password || !body?.phone) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });

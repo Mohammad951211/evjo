@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeJordanPhone } from "@/lib/phone";
 import { sendAdminEmail } from "@/lib/mail";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,12 @@ export const dynamic = "force-dynamic";
  * Always returns ok so it never reveals whether a number has an account.
  */
 export async function POST(req: Request) {
+  // per-IP throttle to block spamming the admin with reset requests
+  const limited = rateLimit(`reset-request:${clientIp(req)}`, 5, 60 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json({ error: "rate_limited", retryIn: limited.retryAfter }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   const name = String(body?.name ?? "").trim();
   const phone = normalizeJordanPhone(String(body?.phone ?? ""));
