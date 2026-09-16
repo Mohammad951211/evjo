@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { currentAdminId } from "@/lib/session";
+import { revalidateStations } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -112,5 +113,6 @@ export async function POST(req: Request) {
     },
   });
 
+  revalidateStations();
   return NextResponse.json({ station }, { status: 201 });
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { refreshStationsFromOcm } from "@/lib/ocm";
 import { refreshStationsFromOsm } from "@/lib/osm";
 import { currentUserId } from "@/lib/session";
+import { revalidateStations } from "@/lib/cache";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -44,6 +45,8 @@ async function runRefresh() {
   if (imported === 0 && result.errors.length > 0) {
     return NextResponse.json({ error: result.errors.join(" | ") }, { status: 502 });
   }
+  // refresh succeeded → bust the cached /api/stations so users get fresh data
+  revalidateStations();
   return NextResponse.json({ imported, ...result });
 }
 
