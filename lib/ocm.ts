@@ -25,6 +25,7 @@ interface OcmPoi {
     Title?: string;
     AddressLine1?: string;
     Town?: string;
+    StateOrProvince?: string;
     Latitude?: number;
     Longitude?: number;
   };
@@ -84,7 +85,10 @@ export async function refreshStationsFromOcm(): Promise<number> {
       quantity: number;
     }[];
 
-    const maxPowerKw = conns.length ? Math.max(...conns.map((c) => c.powerKw)) : 0;
+    // Power rating from ALL connections (not just the enum-classified ones), so
+    // AC / Tesla-destination chargers still get a real kW instead of 0. Stays 0
+    // only when OCM itself has no power figure for any connection.
+    const maxPowerKw = Math.max(0, ...(poi.Connections ?? []).map((c) => c.PowerKW ?? 0));
     const status: StationStatus =
       poi.StatusType?.IsOperational === true
         ? "OPERATIONAL"
@@ -98,7 +102,8 @@ export async function refreshStationsFromOcm(): Promise<number> {
       latitude: lat,
       longitude: lng,
       address: poi.AddressInfo?.AddressLine1 ?? null,
-      town: poi.AddressInfo?.Town ?? null,
+      // fall back to the governorate/state when OCM has no town, else leave null
+      town: poi.AddressInfo?.Town || poi.AddressInfo?.StateOrProvince || null,
       status,
       connectors: conns,
       maxPowerKw,
