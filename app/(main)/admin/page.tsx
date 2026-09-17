@@ -42,9 +42,12 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<ResetRequest[]>([]);
   const [reqTemp, setReqTemp] = useState<Record<string, string>>({});
   const [forbidden, setForbidden] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 20;
 
   useEffect(() => {
-    fetch("/api/admin/users")
+    fetch(`/api/admin/users?page=${page}&pageSize=${pageSize}`)
       .then((r) => {
         if (r.status === 403 || r.status === 401) {
           setForbidden(true);
@@ -52,8 +55,16 @@ export default function AdminPage() {
         }
         return r.json();
       })
-      .then((d) => d && setUsers(d.users ?? []))
+      .then((d) => {
+        if (d) {
+          setUsers(d.users ?? []);
+          setTotal(d.total ?? 0);
+        }
+      })
       .catch(() => setForbidden(true));
+  }, [page]);
+
+  useEffect(() => {
     fetch("/api/admin/reset-requests")
       .then((r) => (r.ok ? r.json() : { requests: [] }))
       .then((d) => setRequests(d.requests ?? []))
@@ -157,8 +168,8 @@ export default function AdminPage() {
           <div className="mt-4 flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground card-shadow">
             <Users className="h-8 w-8 shrink-0 opacity-90" />
             <div>
-              <p className="num text-2xl font-bold leading-none">{users.length}</p>
-              <p className="text-xs text-primary-foreground/80">{t.totalUsers(users.length)}</p>
+              <p className="num text-2xl font-bold leading-none">{total}</p>
+              <p className="text-xs text-primary-foreground/80">{t.totalUsers(total)}</p>
             </div>
           </div>
 
@@ -286,6 +297,28 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+
+          {total > pageSize && (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="rounded-lg border px-4 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40"
+              >
+                {t.prevPage}
+              </button>
+              <span className="num text-xs text-muted-foreground">
+                {t.pageOf(page, Math.max(1, Math.ceil(total / pageSize)))}
+              </span>
+              <button
+                onClick={() => setPage((p) => (p < Math.ceil(total / pageSize) ? p + 1 : p))}
+                disabled={page >= Math.ceil(total / pageSize)}
+                className="rounded-lg border px-4 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40"
+              >
+                {t.nextPage}
+              </button>
             </div>
           )}
         </>
